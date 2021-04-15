@@ -1,32 +1,15 @@
-package net.dzikoysk.funnyguilds.basic.user;
+package net.dzikoysk.funnyguilds.basic.user
 
-import net.dzikoysk.funnyguilds.util.commons.ChatUtils;
-import org.panda_lang.utilities.commons.StringUtils;
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import org.panda_lang.utilities.commons.StringUtils
 
-public class UserBan {
+class UserBan(private val reason: String?, val banTime: Long) {
+    val isBanned: Boolean
+        get() = banTime != 0L
 
-    private final String reason;
-    private final long banTime;
-
-    public UserBan(String reason, long banTime) {
-        this.reason = reason;
-        this.banTime = banTime;
+    fun getReason(): String? {
+        return if (reason != null) {
+            ChatUtils.colored(reason)
+        } else StringUtils.EMPTY
     }
-
-    public boolean isBanned() {
-        return this.banTime != 0;
-    }
-
-    public String getReason() {
-        if (this.reason != null) {
-            return ChatUtils.colored(this.reason);
-        }
-
-        return StringUtils.EMPTY;
-    }
-
-    public long getBanTime() {
-        return banTime;
-    }
-
 }

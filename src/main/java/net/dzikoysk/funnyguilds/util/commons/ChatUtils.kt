@@ -1,77 +1,63 @@
-package net.dzikoysk.funnyguilds.util.commons;
+package net.dzikoysk.funnyguilds.util.commons
 
-import org.bukkit.ChatColor;
+import org.bukkit.ChatColor
+import java.util.*
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-
-public final class ChatUtils {
-
-    private ChatUtils() {}
-
-    public static String colored(String message) {
-        return message != null ? ChatColor.translateAlternateColorCodes('&', message) : null;
+object ChatUtils {
+    fun colored(message: String?): String? {
+        return if (message != null) ChatColor.translateAlternateColorCodes('&', message) else null
     }
-    
-    public static List<String> colored(List<String> messages) {
-        List<String> colored = new ArrayList<>();
-        for (String message : messages) {
-            colored.add(colored(message));
+
+    fun colored(messages: List<String>): List<String?> {
+        val colored: MutableList<String?> = ArrayList()
+        for (message in messages) {
+            colored.add(colored(message))
         }
-        
-        return colored;
+        return colored
     }
 
-    public static String toString(Collection<String> list, boolean send) {
-        StringBuilder builder = new StringBuilder();
-        for (String s : list) {
-            builder.append(s);
-            builder.append(',');
-
+    fun toString(list: Collection<String?>?, send: Boolean): String {
+        val builder = StringBuilder()
+        for (s in list!!) {
+            builder.append(s)
+            builder.append(',')
             if (send) {
-                builder.append(' ');
+                builder.append(' ')
             }
         }
-
-        String s = builder.toString();
+        var s = builder.toString()
         if (send) {
-            if (s.length() > 2) {
-                s = s.substring(0, s.length() - 2);
-            } else if (s.length() > 1) {
-                s = s.substring(0, s.length() - 1);
+            if (s.length > 2) {
+                s = s.substring(0, s.length - 2)
+            } else if (s.length > 1) {
+                s = s.substring(0, s.length - 1)
             }
         }
-
-        return s;
+        return s
     }
 
-    public static List<String> fromString(String s) {
-        List<String> list = new ArrayList<>();
+    fun fromString(s: String?): List<String?> {
+        var list: List<String?> = ArrayList()
         if (s == null || s.isEmpty()) {
-            return list;
+            return list
         }
-
-        list = Arrays.asList(s.split(","));
-        return list;
+        list = Arrays.asList(*s.split(",".toRegex()).toTypedArray())
+        return list
     }
 
-    public static String appendDigit(int number) {
-        return number > 9 ? "" + number : "0" + number;
+    fun appendDigit(number: Int): String {
+        return if (number > 9) "" + number else "0$number"
     }
 
-    public static String appendDigit(String number) {
-        return number.length() > 1 ? "" + number : "0" + number;
+    fun appendDigit(number: String): String {
+        return if (number.length > 1) "" + number else "0$number"
     }
 
-    public static String getPercent(double dividend, double divisor) {
-        return getPercent(dividend / divisor);
-    }
-    
-    public static String getPercent(double fraction) {
-        return String.format(Locale.US, "%.1f", 100.0D * fraction);
+    fun getPercent(dividend: Double, divisor: Double): String {
+        return getPercent(dividend / divisor)
     }
 
+    fun getPercent(fraction: Double): String {
+        return String.format(Locale.US, "%.1f", 100.0 * fraction)
+    }
 }

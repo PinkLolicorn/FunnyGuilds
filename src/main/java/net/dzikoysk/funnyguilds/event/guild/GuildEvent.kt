@@ -1,28 +1,18 @@
-package net.dzikoysk.funnyguilds.event.guild;
+package net.dzikoysk.funnyguilds.event.guild
 
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.event.FunnyEvent;
-import org.bukkit.Bukkit;
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.event.FunnyEvent
+import org.bukkit.Bukkit
 
-public abstract class GuildEvent extends FunnyEvent {
+abstract class GuildEvent : FunnyEvent {
+    val guild: Guild?
 
-    private final Guild guild;
-
-    public GuildEvent(EventCause eventCause, User doer, Guild guild) {
-        super(eventCause, doer, ! Bukkit.isPrimaryThread());
-
-        this.guild = guild;
+    constructor(eventCause: EventCause?, doer: User?, guild: Guild?) : super(eventCause, doer, !Bukkit.isPrimaryThread()) {
+        this.guild = guild
     }
 
-    public GuildEvent(EventCause eventCause, User doer, Guild guild, boolean isAsync) {
-        super(eventCause, doer, isAsync);
-
-        this.guild = guild;
+    constructor(eventCause: EventCause?, doer: User?, guild: Guild?, isAsync: Boolean) : super(eventCause, doer, isAsync) {
+        this.guild = guild
     }
-
-    public Guild getGuild() {
-        return this.guild;
-    }
-    
 }

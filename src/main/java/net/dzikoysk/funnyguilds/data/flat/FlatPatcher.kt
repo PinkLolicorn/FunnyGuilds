@@ -1,54 +1,41 @@
-package net.dzikoysk.funnyguilds.data.flat;
+package net.dzikoysk.funnyguilds.data.flat
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.util.commons.IOUtils;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.util.commons.*
+import java.io.*
 
-import java.io.File;
-
-public class FlatPatcher {
-
-    public void patch(FlatDataModel flatDataModel) {
-        File guilds = new File(FunnyGuilds.getInstance().getDataFolder() + File.separator + "guilds");
-        File regions = new File(FunnyGuilds.getInstance().getDataFolder() + File.separator + "regions");
-
-        boolean guildsExists = guilds.exists();
-        boolean regionsExists = regions.exists();
-
+class FlatPatcher {
+    fun patch(flatDataModel: FlatDataModel) {
+        val guilds: File = File(FunnyGuilds.Companion.getInstance().getDataFolder().toString() + File.separator + "guilds")
+        val regions: File = File(FunnyGuilds.Companion.getInstance().getDataFolder().toString() + File.separator + "regions")
+        val guildsExists = guilds.exists()
+        val regionsExists = regions.exists()
         if (guildsExists || regionsExists) {
-            FunnyGuilds.getPluginLogger().update("Updating flat files ...");
-            FunnyGuilds.getPluginLogger().update("Scanning files ...");
-            int filesFound = 0;
-
-            File[] guildsList = guilds.listFiles();
-            File[] regionsList = regions.listFiles();
-
-            filesFound += guildsList != null ? guildsList.length : 0;
-            filesFound += regionsList != null ? regionsList.length : 0;
-
-            FunnyGuilds.getPluginLogger().update(filesFound + " files found ...");
-            FunnyGuilds.getPluginLogger().update("Updating files ...");
-
+            FunnyGuilds.Companion.getPluginLogger().update("Updating flat files ...")
+            FunnyGuilds.Companion.getPluginLogger().update("Scanning files ...")
+            var filesFound = 0
+            var guildsList = guilds.listFiles()
+            var regionsList = regions.listFiles()
+            filesFound += guildsList?.size ?: 0
+            filesFound += regionsList?.size ?: 0
+            FunnyGuilds.Companion.getPluginLogger().update("$filesFound files found ...")
+            FunnyGuilds.Companion.getPluginLogger().update("Updating files ...")
             if (guildsExists) {
-                guilds.renameTo(flatDataModel.getGuildsFolder());
+                guilds.renameTo(flatDataModel.guildsFolder)
             }
-
             if (regionsExists) {
-                regions.renameTo(flatDataModel.getRegionsFolder());
+                regions.renameTo(flatDataModel.regionsFolder)
             }
-
-            guildsList = guilds.listFiles();
-            regionsList = regions.listFiles();
-
-            if (guildsList == null || guildsList.length == 0) {
-                IOUtils.delete(guilds);
+            guildsList = guilds.listFiles()
+            regionsList = regions.listFiles()
+            if (guildsList == null || guildsList.size == 0) {
+                IOUtils.delete(guilds)
             }
-            if (regionsList == null || regionsList.length == 0) {
-                IOUtils.delete(regions);
+            if (regionsList == null || regionsList.size == 0) {
+                IOUtils.delete(regions)
             }
-
-            FunnyGuilds.getPluginLogger().update("Done!");
-            FunnyGuilds.getPluginLogger().update("Updated files: " + filesFound);
+            FunnyGuilds.Companion.getPluginLogger().update("Done!")
+            FunnyGuilds.Companion.getPluginLogger().update("Updated files: $filesFound")
         }
     }
-
 }

@@ -1,63 +1,53 @@
-package net.dzikoysk.funnyguilds.util.telemetry;
+package net.dzikoysk.funnyguilds.util.telemetry
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.List;
-
-import com.google.gson.Gson;
-import net.dzikoysk.funnyguilds.util.commons.IOUtils;
-import org.diorite.utils.network.DioriteURLUtils;
+import com.google.gson.Gson
+import net.dzikoysk.funnyguilds.util.commons.IOUtils
+import org.diorite.utils.network.DioriteURLUtils
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.nio.charset.StandardCharsets
 
 /**
  * TODO: Move this to a separate library.
  */
-public class FunnyTelemetry {
-
-    private FunnyTelemetry() {}
-
-    private static final Gson   gson                 = new Gson();
-    public static final  String URL                  = "https://funnytelemetry.dzikoysk.net";
-    public static final  String FUNNYBIN_POST        = URL + "/funnybin/api/post";
-    public static final  String FUNNYBIN_POST_BUNDLE = URL + "/funnybin/api/bundle/post";
-
-    public static FunnybinResponse postToFunnybin(String paste, PasteType pasteType, String tag) throws IOException {
-        return sendPost(FUNNYBIN_POST + "?type=" + pasteType.toString() + "&tag=" + DioriteURLUtils.encodeUTF8(tag), paste, FunnybinResponse.class);
+object FunnyTelemetry {
+    private val gson = Gson()
+    const val URL = "https://funnytelemetry.dzikoysk.net"
+    const val FUNNYBIN_POST = URL + "/funnybin/api/post"
+    const val FUNNYBIN_POST_BUNDLE = URL + "/funnybin/api/bundle/post"
+    @Throws(IOException::class)
+    fun postToFunnybin(paste: String?, pasteType: PasteType, tag: String?): FunnybinResponse {
+        return sendPost(FUNNYBIN_POST + "?type=" + pasteType.toString() + "&tag=" + DioriteURLUtils.encodeUTF8(tag), paste, FunnybinResponse::class.java)
     }
 
-    public static FunnybinResponse createBundle(List<String> pastes) throws IOException {
+    @Throws(IOException::class)
+    fun createBundle(pastes: List<String?>): FunnybinResponse? {
         if (pastes.isEmpty()) {
-            return null;
+            return null
         }
-
-        Iterator<String> iterator = pastes.iterator();
-        StringBuilder url = new StringBuilder(DioriteURLUtils.createQueryElement("paste", iterator.next()));
-
+        val iterator = pastes.iterator()
+        val url = StringBuilder(DioriteURLUtils.createQueryElement("paste", iterator.next()))
         while (iterator.hasNext()) {
-            url.append("&");
-            DioriteURLUtils.addQueryElement("paste", iterator.next(), url);
+            url.append("&")
+            DioriteURLUtils.addQueryElement("paste", iterator.next(), url)
         }
-
-        return sendPost(FUNNYBIN_POST_BUNDLE + "?" + url.toString(), "", FunnybinResponse.class);
+        return sendPost(FUNNYBIN_POST_BUNDLE + "?" + url.toString(), "", FunnybinResponse::class.java)
     }
 
-    private static <T> T sendPost(String url, String body, Class<T> response) throws IOException {
-        System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
-        System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2");
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        connection.setRequestMethod("POST");
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-
-        byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
-        connection.addRequestProperty("User-Agent", "FunnyGuilds");
-        connection.addRequestProperty("Content-Type", "text/plain");
-        connection.setRequestProperty("Content-Length", String.valueOf(bodyBytes.length));
-
-        connection.getOutputStream().write(bodyBytes);
-        return gson.fromJson(IOUtils.toString(connection.getInputStream(), "UTF-8"), response);
+    @Throws(IOException::class)
+    private fun <T> sendPost(url: String, body: String?, response: Class<T>): T {
+        System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2")
+        System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2")
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.doInput = true
+        connection.doOutput = true
+        val bodyBytes = body!!.toByteArray(StandardCharsets.UTF_8)
+        connection.addRequestProperty("User-Agent", "FunnyGuilds")
+        connection.addRequestProperty("Content-Type", "text/plain")
+        connection.setRequestProperty("Content-Length", bodyBytes.size.toString())
+        connection.outputStream.write(bodyBytes)
+        return gson.fromJson(IOUtils.toString(connection.inputStream, "UTF-8"), response)
     }
 }

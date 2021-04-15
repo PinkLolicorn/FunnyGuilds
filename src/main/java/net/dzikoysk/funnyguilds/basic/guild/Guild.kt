@@ -1,481 +1,412 @@
-package net.dzikoysk.funnyguilds.basic.guild;
+package net.dzikoysk.funnyguilds.basic.guild
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.AbstractBasic;
-import net.dzikoysk.funnyguilds.basic.BasicType;
-import net.dzikoysk.funnyguilds.basic.rank.Rank;
-import net.dzikoysk.funnyguilds.basic.rank.RankManager;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.basic.user.UserUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.BasicType
+import net.dzikoysk.funnyguilds.basic.rank.Rank
+import net.dzikoysk.funnyguilds.basic.rank.RankManager
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.entity.Player
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.stream.Collectors
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-public class Guild extends AbstractBasic {
-
-    private final UUID uuid;
-
-    private String     name;
-    private String     tag;
-    private User       owner;
-    private Rank       rank;
-    private Region     region;
-    private Location   home;
-    private Set<User>  members;
-    private Set<User>  deputies;
-    private Set<Guild> allies;
-    private Set<Guild> enemies;
-    private Location   enderCrystal;
-    private boolean    pvp;
-    private long       born;
-    private long       validity;
-    private Date       validityDate;
-    private long       attacked;
-    private long       ban;
-    private int        lives;
-    private long       build;
-    private long       additionalProtection;
-    private Set<UUID>  alliedFFGuilds;
-
-    private Guild(UUID uuid) {
-        this.uuid = uuid;
-
-        this.born = System.currentTimeMillis();
-        this.members = ConcurrentHashMap.newKeySet();
-        this.deputies = ConcurrentHashMap.newKeySet();
-        this.allies = ConcurrentHashMap.newKeySet();
-        this.enemies = ConcurrentHashMap.newKeySet();
-        this.alliedFFGuilds = ConcurrentHashMap.newKeySet();
-    }
-
-    public Guild(String name) {
-        this(UUID.randomUUID());
-        this.name = name;
-    }
-
-    public void broadcast(String message) {
-        for (User user : this.getOnlineMembers()) {
-            if (user.getPlayer() == null) {
-                continue;
+class Guild private constructor(uuid: UUID) : AbstractBasic() {
+    val uUID: UUID?
+    private override var name: String? = null
+    var tag: String? = null
+        set(tag) {
+            field = tag
+            markChanged()
+        }
+    private var owner: User? = null
+    var rank: Rank? = null
+        get() {
+            if (field != null) {
+                return field
             }
+            field = Rank(this)
+            RankManager.Companion.getInstance().update(this)
+            return field
+        }
+        set(rank) {
+            field = rank
+            markChanged()
+        }
+    var region: Region? = null
+        private set
+    private var home: Location? = null
+    private var members: MutableSet<User?>
+    private var deputies: MutableSet<User?>
+    private var allies: MutableSet<Guild?>?
+    private var enemies: MutableSet<Guild?>?
+    var enderCrystal: Location? = null
+    private var pvp = false
+    private var born: Long
+    private var validity: Long = 0
+    private var validityDate: Date? = null
+    private var attacked: Long = 0
+    private var ban: Long = 0
+    private var lives = 0
+    private var build: Long = 0
+    var additionalProtectionEndTime: Long = 0
+        private set
+    private val alliedFFGuilds: MutableSet<UUID?>
 
-            user.getPlayer().sendMessage(message);
+    constructor(name: String?) : this(UUID.randomUUID()) {
+        this.name = name
+    }
+
+    fun broadcast(message: String?) {
+        for (user in onlineMembers) {
+            if (user.player == null) {
+                continue
+            }
+            user.player.sendMessage(message)
         }
     }
 
-    public void addLive() {
-        this.lives++;
-        this.markChanged();
+    fun addLive() {
+        lives++
+        markChanged()
     }
 
-    public void addMember(User user) {
-        if (this.members.contains(user)) {
-            return;
+    fun addMember(user: User?) {
+        if (members.contains(user)) {
+            return
         }
-
-        this.members.add(user);
-        this.updateRank();
-        this.markChanged();
+        members.add(user)
+        updateRank()
+        markChanged()
     }
 
-    public void addAlly(Guild guild) {
-        this.markChanged();
-        if (this.allies.contains(guild)) {
-            return;
+    fun addAlly(guild: Guild?) {
+        markChanged()
+        if (allies!!.contains(guild)) {
+            return
         }
-
-        this.allies.add(guild);
+        allies!!.add(guild)
     }
 
-    public void addEnemy(Guild guild) {
-        if (this.enemies.contains(guild)) {
-            return;
+    fun addEnemy(guild: Guild?) {
+        if (enemies!!.contains(guild)) {
+            return
         }
-
-        this.enemies.add(guild);
-        this.markChanged();
+        enemies!!.add(guild)
+        markChanged()
     }
 
-    public void deserializationUpdate() {
-        this.owner.setGuild(this);
-        UserUtils.setGuild(this.members, this);
+    fun deserializationUpdate() {
+        owner!!.guild = this
+        UserUtils.setGuild(members, this)
     }
 
-    public void removeLive() {
-        this.lives--;
-        this.markChanged();
+    fun removeLive() {
+        lives--
+        markChanged()
     }
 
-    public void removeMember(User user) {
-        this.deputies.remove(user);
-        this.members.remove(user);
-        this.updateRank();
-        this.markChanged();
+    fun removeMember(user: User?) {
+        deputies.remove(user)
+        members.remove(user)
+        updateRank()
+        markChanged()
     }
 
-    public void removeAlly(Guild guild) {
-        this.allies.remove(guild);
-        this.markChanged();
+    fun removeAlly(guild: Guild?) {
+        allies!!.remove(guild)
+        markChanged()
     }
 
-    public void removeEnemy(Guild guild) {
-        this.enemies.remove(guild);
-        this.markChanged();
+    fun removeEnemy(guild: Guild?) {
+        enemies!!.remove(guild)
+        markChanged()
     }
 
-    public void delete() {
-        GuildUtils.removeGuild(this);
+    fun delete() {
+        GuildUtils.removeGuild(this)
     }
 
-    public boolean canBuild() {
-        if (this.build > System.currentTimeMillis()) {
-            return false;
+    fun canBuild(): Boolean {
+        if (build > System.currentTimeMillis()) {
+            return false
         }
-
-        this.build = 0;
-        this.markChanged();
-        return true;
+        build = 0
+        markChanged()
+        return true
     }
 
-    public void updateRank() {
-        this.getRank();
-        RankManager.getInstance().update(this);
+    fun updateRank() {
+        rank
+        RankManager.Companion.getInstance().update(this)
     }
 
-    public boolean canBeAttacked() {
-        return this.getProtectionEndTime() < System.currentTimeMillis() && this.additionalProtection < System.currentTimeMillis();
+    fun canBeAttacked(): Boolean {
+        return protectionEndTime < System.currentTimeMillis() && additionalProtectionEndTime < System.currentTimeMillis()
     }
 
-    public void addDeputy(User user) {
-        if (this.deputies.contains(user)) {
-            return;
+    fun addDeputy(user: User?) {
+        if (deputies.contains(user)) {
+            return
         }
-
-        this.deputies.add(user);
-        this.markChanged();
+        deputies.add(user)
+        markChanged()
     }
 
-    public void removeDeputy(User user) {
-        this.deputies.remove(user);
-        this.markChanged();
+    fun removeDeputy(user: User?) {
+        deputies.remove(user)
+        markChanged()
     }
 
-    public void setAdditionalProtection(long timestamp) {
-        this.additionalProtection = timestamp;
+    fun setAdditionalProtection(timestamp: Long) {
+        additionalProtectionEndTime = timestamp
     }
 
-    public void setName(String name) {
-        this.name = name;
-        this.markChanged();
+    fun setName(name: String?) {
+        this.name = name
+        markChanged()
     }
 
-    public void setTag(String tag) {
-        this.tag = tag;
-        this.markChanged();
+    fun setOwner(user: User?) {
+        owner = user
+        addMember(user)
+        markChanged()
     }
 
-    public void setOwner(User user) {
-        this.owner = user;
-        this.addMember(user);
-        this.markChanged();
+    fun setDeputies(users: MutableSet<User?>) {
+        deputies = users
+        markChanged()
     }
 
-    public void setDeputies(Set<User> users) {
-        this.deputies = users;
-        this.markChanged();
-    }
-
-    public void setRegion(Region region) {
-        if (! FunnyGuilds.getInstance().getPluginConfiguration().regionsEnabled) {
-            return;
+    fun setRegion(region: Region) {
+        if (!FunnyGuilds.Companion.getInstance().getPluginConfiguration().regionsEnabled) {
+            return
         }
-
-        this.region = region;
-        this.region.setGuild(this);
-
-        if (this.home == null) {
-            this.home = region.getCenter();
+        this.region = region
+        this.region!!.guild = this
+        if (home == null) {
+            home = region.center
         }
-
-        this.markChanged();
+        markChanged()
     }
 
-    public void setHome(Location home) {
-        this.home = home;
-        this.markChanged();
+    fun setHome(home: Location?) {
+        this.home = home
+        markChanged()
     }
 
-    public void setMembers(Set<User> members) {
-        this.members = Collections.synchronizedSet(members);
-        this.updateRank();
-        this.markChanged();
+    fun setMembers(members: Set<User?>?) {
+        this.members = Collections.synchronizedSet(members)
+        updateRank()
+        markChanged()
     }
 
-    public void setAllies(Set<Guild> guilds) {
-        this.allies = guilds;
-        this.markChanged();
+    fun setAllies(guilds: MutableSet<Guild?>?) {
+        allies = guilds
+        markChanged()
     }
 
-    public void setEnemies(Set<Guild> guilds) {
-        this.enemies = guilds;
-        this.markChanged();
+    fun setEnemies(guilds: MutableSet<Guild?>?) {
+        enemies = guilds
+        markChanged()
     }
 
-    public void setPvP(boolean b) {
-        this.pvp = b;
-        this.markChanged();
-    }
-
-    public void setPvP(Guild alliedGuild, boolean enablePvp) {
+    fun setPvP(alliedGuild: Guild, enablePvp: Boolean) {
         if (enablePvp) {
-            this.alliedFFGuilds.add(alliedGuild.getUUID());
+            alliedFFGuilds.add(alliedGuild.uUID)
+        } else {
+            alliedFFGuilds.remove(alliedGuild.uUID)
         }
-        else {
-            this.alliedFFGuilds.remove(alliedGuild.getUUID());
+    }
+
+    fun getPvP(alliedGuild: Guild?): Boolean {
+        return allies!!.contains(alliedGuild) && alliedFFGuilds.contains(alliedGuild!!.uUID)
+    }
+
+    fun setBorn(l: Long) {
+        born = l
+        markChanged()
+    }
+
+    fun setValidity(l: Long) {
+        if (l == born) {
+            validity = System.currentTimeMillis() + FunnyGuilds.Companion.getInstance().getPluginConfiguration().validityStart
+        } else {
+            validity = l
         }
+        validityDate = Date(validity)
+        markChanged()
     }
 
-    public boolean getPvP(Guild alliedGuild) {
-        return this.allies.contains(alliedGuild) && this.alliedFFGuilds.contains(alliedGuild.getUUID());
+    fun setAttacked(l: Long) {
+        attacked = l
+        markChanged()
     }
 
-    public void setBorn(long l) {
-        this.born = l;
-        this.markChanged();
+    fun setLives(i: Int) {
+        lives = i
+        markChanged()
     }
 
-    public void setValidity(long l) {
-        if (l == this.born) {
-            this.validity = System.currentTimeMillis() + FunnyGuilds.getInstance().getPluginConfiguration().validityStart;
-        }
-        else {
-            this.validity = l;
-        }
-
-        this.validityDate = new Date(this.validity);
-        this.markChanged();
-    }
-
-    public void setAttacked(long l) {
-        this.attacked = l;
-        this.markChanged();
-    }
-
-    public void setLives(int i) {
-        this.lives = i;
-        this.markChanged();
-    }
-
-    public void setBan(long l) {
+    fun setBan(l: Long) {
         if (l > System.currentTimeMillis()) {
-            this.ban = l;
+            ban = l
+        } else {
+            ban = 0
         }
-        else {
-            this.ban = 0;
-        }
-
-        this.markChanged();
+        markChanged()
     }
 
-    public void setBuild(long time) {
-        this.build = time;
-        this.markChanged();
+    fun setBuild(time: Long) {
+        build = time
+        markChanged()
     }
 
-    public void setRank(Rank rank) {
-        this.rank = rank;
-        this.markChanged();
-    }
-
-    public void setEnderCrystal(Location loc) {
-        this.enderCrystal = loc;
-    }
-
-    public long getProtectionEndTime() {
-        return this.attacked == this.born ? this.attacked + FunnyGuilds.getInstance().getPluginConfiguration().warProtection : this.attacked + FunnyGuilds.getInstance().getPluginConfiguration().warWait;
-    }
-
-    public long getAdditionalProtectionEndTime() {
-        return this.additionalProtection;
-    }
-
-    public boolean isSomeoneInRegion() {
-        return FunnyGuilds.getInstance().getPluginConfiguration().regionsEnabled && Bukkit.getOnlinePlayers().stream()
-                .filter(player -> User.get(player).getGuild() != this)
-                .map(player -> RegionUtils.getAt(player.getLocation()))
-                .anyMatch(region -> region != null && region.getGuild() == this);
-    }
-
-    public boolean isValid() {
-        if (this.validity == this.born || this.validity == 0) {
-            this.validity = System.currentTimeMillis() + FunnyGuilds.getInstance().getPluginConfiguration().validityStart;
-            this.markChanged();
-        }
-
-        return this.validity >= System.currentTimeMillis();
-    }
-
-    public boolean isBanned() {
-        return this.ban > System.currentTimeMillis();
-    }
-
-    public UUID getUUID() {
-        return this.uuid;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
-    }
-
-    public String getTag() {
-        return this.tag;
-    }
-
-    public User getOwner() {
-        return this.owner;
-    }
-
-    public Set<User> getDeputies() {
-        return this.deputies;
-    }
-
-    public Region getRegion() {
-        return region;
-    }
-
-    public Location getHome() {
-        return this.home;
-    }
-
-    public Set<User> getMembers() {
-        return this.members;
-    }
-
-    public Set<User> getOnlineMembers() {
-        return this.members
-                .stream()
-                .filter(User::isOnline)
-                .collect(Collectors.toSet());
-    }
-
-    public Set<Guild> getAllies() {
-        return this.allies;
-    }
-
-    public Set<Guild> getEnemies() {
-        return enemies;
-    }
-
-    public boolean getPvP() {
-        return this.pvp;
-    }
-
-    public long getBorn() {
-        return this.born;
-    }
-
-    public long getValidity() {
-        return this.validity;
-    }
-
-    public Date getValidityDate() {
-        return this.validityDate == null ? this.validityDate = new Date(this.validity) : this.validityDate;
-    }
-
-    public long getAttacked() {
-        return this.attacked;
-    }
-
-    public int getLives() {
-        return this.lives;
-    }
-
-    public long getBan() {
-        return this.ban;
-    }
-
-    public long getBuild() {
-        return this.build;
-    }
-
-    public Rank getRank() {
-        if (this.rank != null) {
-            return this.rank;
-        }
-
-        this.rank = new Rank(this);
-        RankManager.getInstance().update(this);
-        return this.rank;
-    }
-
-    public Location getEnderCrystal() {
-        return this.enderCrystal;
-    }
-
-    @Override
-    public BasicType getType() {
-        return BasicType.GUILD;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-
-        result = prime * result + (uuid == null ? 0 : uuid.hashCode());
-
-        return result;
-    }
-
-    @Override
-    public boolean equals(final Object obj) {
-        if (obj == this) {
-            return true;
-        }
-
-        if (obj == null || obj.getClass() != this.getClass()) {
-            return false;
-        }
-
-        return ((Guild) obj).getUUID().equals(this.uuid);
-    }
-
-    @Override
-    public String toString() {
-        return this.name;
-    }
-
-    public static Guild getOrCreate(UUID uuid) {
-        for (Guild guild : GuildUtils.getGuilds()) {
-            if (guild.getUUID().equals(uuid)) {
-                return guild;
+    val protectionEndTime: Long
+        get() = if (attacked == born) attacked + FunnyGuilds.Companion.getInstance().getPluginConfiguration().warProtection else attacked + FunnyGuilds.Companion.getInstance()
+            .getPluginConfiguration().warWait
+    val isSomeoneInRegion: Boolean
+        get() = FunnyGuilds.Companion.getInstance().getPluginConfiguration().regionsEnabled && Bukkit.getOnlinePlayers().stream()
+            .filter { player: Player? -> User.Companion.get(player)!!.getGuild() !== this }
+            .map { player: Player -> RegionUtils.getAt(player.location) }
+            .anyMatch { region: Region? -> region != null && region.guild === this }
+    val isValid: Boolean
+        get() {
+            if (validity == born || validity == 0L) {
+                validity = System.currentTimeMillis() + FunnyGuilds.Companion.getInstance().getPluginConfiguration().validityStart
+                markChanged()
             }
+            return validity >= System.currentTimeMillis()
         }
+    val isBanned: Boolean
+        get() = ban > System.currentTimeMillis()
 
-        final Guild newGuild = new Guild(uuid);
-        GuildUtils.addGuild(newGuild);
-
-        return newGuild;
+    override fun getName(): String? {
+        return name
     }
 
-    public static Guild getOrCreate(String name) {
-        for (Guild guild : GuildUtils.getGuilds()) {
-            if (guild.getName().equalsIgnoreCase(name)) {
-                return guild;
+    fun getOwner(): User? {
+        return owner
+    }
+
+    fun getDeputies(): Set<User?> {
+        return deputies
+    }
+
+    fun getHome(): Location? {
+        return home
+    }
+
+    fun getMembers(): Set<User?> {
+        return members
+    }
+
+    val onlineMembers: Set<User>
+        get() = members
+            .stream()
+            .filter { obj: User? -> obj!!.isOnline }
+            .collect(Collectors.toSet())
+
+    fun getAllies(): Set<Guild?>? {
+        return allies
+    }
+
+    fun getEnemies(): Set<Guild?>? {
+        return enemies
+    }
+
+    var pvP: Boolean
+        get() = pvp
+        set(b) {
+            pvp = b
+            markChanged()
+        }
+
+    fun getBorn(): Long {
+        return born
+    }
+
+    fun getValidity(): Long {
+        return validity
+    }
+
+    fun getValidityDate(): Date {
+        return if (validityDate == null) Date(validity).also { validityDate = it } else validityDate!!
+    }
+
+    fun getAttacked(): Long {
+        return attacked
+    }
+
+    fun getLives(): Int {
+        return lives
+    }
+
+    fun getBan(): Long {
+        return ban
+    }
+
+    fun getBuild(): Long {
+        return build
+    }
+
+    override val type: BasicType?
+        get() = BasicType.GUILD
+
+    override fun hashCode(): Int {
+        val prime = 31
+        var result = 1
+        result = prime * result + if (uUID == null) 0 else uUID.hashCode()
+        return result
+    }
+
+    override fun equals(obj: Any?): Boolean {
+        if (obj === this) {
+            return true
+        }
+        return if (obj == null || obj.javaClass != this.javaClass) {
+            false
+        } else (obj as Guild).uUID == uUID
+    }
+
+    override fun toString(): String {
+        return name!!
+    }
+
+    companion object {
+        fun getOrCreate(uuid: UUID): Guild? {
+            for (guild in GuildUtils.getGuilds()) {
+                if (guild!!.uUID == uuid) {
+                    return guild
+                }
             }
+            val newGuild = Guild(uuid)
+            GuildUtils.addGuild(newGuild)
+            return newGuild
         }
 
-        final Guild newGuild = new Guild(name);
-        GuildUtils.addGuild(newGuild);
-
-        return newGuild;
+        fun getOrCreate(name: String?): Guild? {
+            for (guild in GuildUtils.getGuilds()) {
+                if (guild!!.name.equals(name, ignoreCase = true)) {
+                    return guild
+                }
+            }
+            val newGuild = Guild(name)
+            GuildUtils.addGuild(newGuild)
+            return newGuild
+        }
     }
 
+    init {
+        uUID = uuid
+        born = System.currentTimeMillis()
+        members = ConcurrentHashMap.newKeySet()
+        deputies = ConcurrentHashMap.newKeySet()
+        allies = ConcurrentHashMap.newKeySet()
+        enemies = ConcurrentHashMap.newKeySet()
+        alliedFFGuilds = ConcurrentHashMap.newKeySet()
+    }
 }

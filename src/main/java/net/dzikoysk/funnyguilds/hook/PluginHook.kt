@@ -1,134 +1,103 @@
-package net.dzikoysk.funnyguilds.hook;
+package net.dzikoysk.funnyguilds.hook
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit6Hook;
-import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit7Hook;
-import net.dzikoysk.funnyguilds.hook.worldedit.WorldEditHook;
-import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard6Hook;
-import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard7Hook;
-import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuardHook;
-import org.bukkit.Bukkit;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit6Hook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit7Hook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEditHook
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard6Hook
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard7Hook
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuardHook
+import org.bukkit.Bukkit
+import java.util.function.BooleanSupplier
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BooleanSupplier;
-
-public final class PluginHook {
-
-    public static final String PLUGIN_FUNNYTAB           = "FunnyTab";
-    public static final String PLUGIN_WORLDGUARD         = "WorldGuard";
-    public static final String PLUGIN_WORLDEDIT          = "WorldEdit";
-    public static final String PLUGIN_VAULT              = "Vault";
-    public static final String PLUGIN_PLACEHOLDERAPI     = "PlaceholderAPI";
-    public static final String PLUGIN_BUNGEETABLISTPLUS  = "BungeeTabListPlus";
-    public static final String PLUGIN_MVDWPLACEHOLDERAPI = "MVdWPlaceholderAPI";
-    public static final String PLUGIN_LEADERHEADS        = "LeaderHeads";
-
-    public static WorldGuardHook WORLD_GUARD;
-    public static WorldEditHook WORLD_EDIT;
-
-    private static final List<String> HOOK_LIST = new ArrayList<>();
-
-    public static void earlyInit() {
-        tryInit(PLUGIN_WORLDGUARD, () -> {
+object PluginHook {
+    const val PLUGIN_FUNNYTAB = "FunnyTab"
+    const val PLUGIN_WORLDGUARD = "WorldGuard"
+    const val PLUGIN_WORLDEDIT = "WorldEdit"
+    const val PLUGIN_VAULT = "Vault"
+    const val PLUGIN_PLACEHOLDERAPI = "PlaceholderAPI"
+    const val PLUGIN_BUNGEETABLISTPLUS = "BungeeTabListPlus"
+    const val PLUGIN_MVDWPLACEHOLDERAPI = "MVdWPlaceholderAPI"
+    const val PLUGIN_LEADERHEADS = "LeaderHeads"
+    var WORLD_GUARD: WorldGuardHook? = null
+    var WORLD_EDIT: WorldEditHook? = null
+    private val HOOK_LIST: MutableList<String?> = ArrayList()
+    fun earlyInit() {
+        tryInit(PLUGIN_WORLDGUARD, {
             try {
-                Class.forName("com.sk89q.worldguard.protection.flags.registry.FlagRegistry");
-                Class.forName("com.sk89q.worldguard.protection.flags.Flag");
-
-                String worldGuardVersion = Bukkit.getPluginManager().getPlugin("WorldGuard").getDescription().getVersion();
-                WORLD_GUARD = worldGuardVersion.startsWith("7") ? new WorldGuard7Hook() : new WorldGuard6Hook();
-                WORLD_GUARD.init();
-
-                return true;
+                Class.forName("com.sk89q.worldguard.protection.flags.registry.FlagRegistry")
+                Class.forName("com.sk89q.worldguard.protection.flags.Flag")
+                val worldGuardVersion = Bukkit.getPluginManager().getPlugin("WorldGuard")!!.description.version
+                WORLD_GUARD = if (worldGuardVersion.startsWith("7")) WorldGuard7Hook() else WorldGuard6Hook()
+                WORLD_GUARD!!.init()
+                return@tryInit true
+            } catch (exception: ClassNotFoundException) {
+                FunnyGuilds.Companion.getPluginLogger().warning("FunnyGuilds supports only WorldGuard v6.2 or newer")
+                return@tryInit false
             }
-            catch (final ClassNotFoundException exception) {
-                FunnyGuilds.getPluginLogger().warning("FunnyGuilds supports only WorldGuard v6.2 or newer");
-                return false;
-            }
-        });
+        })
     }
 
-    public static void init() {
-        tryInit(PLUGIN_FUNNYTAB, () -> {
-            FunnyTabHook.initFunnyDisabler();
-            return true;
-        }, false);
-
-        tryInit(PLUGIN_WORLDEDIT, () -> {
+    fun init() {
+        tryInit(PLUGIN_FUNNYTAB, {
+            FunnyTabHook.initFunnyDisabler()
+            true
+        }, false)
+        tryInit(PLUGIN_WORLDEDIT, {
             try {
-                Class.forName("com.sk89q.worldedit.Vector");
-                WORLD_EDIT = new WorldEdit6Hook();
+                Class.forName("com.sk89q.worldedit.Vector")
+                WORLD_EDIT = WorldEdit6Hook()
+            } catch (ignored: ClassNotFoundException) {
+                WORLD_EDIT = WorldEdit7Hook()
             }
-            catch (ClassNotFoundException ignored) {
-                WORLD_EDIT = new WorldEdit7Hook();
-            }
-
-            WORLD_EDIT.init();
-            return true;
-        });
-
-        tryInit(PLUGIN_BUNGEETABLISTPLUS, () -> {
+            WORLD_EDIT!!.init()
+            true
+        })
+        tryInit(PLUGIN_BUNGEETABLISTPLUS, {
             try {
-                Class.forName("codecrafter47.bungeetablistplus.api.bukkit.Variable");
-                BungeeTabListPlusHook.initVariableHook();
-
-                return true;
+                Class.forName("codecrafter47.bungeetablistplus.api.bukkit.Variable")
+                BungeeTabListPlusHook.initVariableHook()
+                return@tryInit true
+            } catch (exception: ClassNotFoundException) {
+                return@tryInit false
             }
-            catch (final ClassNotFoundException exception) {
-                return false;
-            }
-        });
-
-        tryInit(PLUGIN_MVDWPLACEHOLDERAPI, () -> {
+        })
+        tryInit(PLUGIN_MVDWPLACEHOLDERAPI, {
             try {
-                Class.forName("be.maximvdw.placeholderapi.PlaceholderReplacer");
-                MVdWPlaceholderAPIHook.initPlaceholderHook();
-
-                return true;
+                Class.forName("be.maximvdw.placeholderapi.PlaceholderReplacer")
+                MVdWPlaceholderAPIHook.initPlaceholderHook()
+                return@tryInit true
+            } catch (exception: ClassNotFoundException) {
+                return@tryInit false
             }
-            catch (final ClassNotFoundException exception) {
-                return false;
-            }
-        });
-
-        tryInit(PLUGIN_VAULT, () -> {
-            VaultHook.initHooks();
-            return true;
-        });
-
-        tryInit(PLUGIN_PLACEHOLDERAPI, () -> {
-            PlaceholderAPIHook.initPlaceholderHook();
-            return true;
-        });
-
-        tryInit(PLUGIN_LEADERHEADS, () -> {
-            LeaderHeadsHook.initLeaderHeadsHook();
-            return true;
-        });
+        })
+        tryInit(PLUGIN_VAULT, {
+            VaultHook.initHooks()
+            true
+        })
+        tryInit(PLUGIN_PLACEHOLDERAPI, {
+            PlaceholderAPIHook.initPlaceholderHook()
+            true
+        })
+        tryInit(PLUGIN_LEADERHEADS, {
+            LeaderHeadsHook.initLeaderHeadsHook()
+            true
+        })
     }
 
-    public static void tryInit(final String plugin, final BooleanSupplier init, final boolean notifyIfMissing) {
+    @JvmOverloads
+    fun tryInit(plugin: String, init: BooleanSupplier, notifyIfMissing: Boolean = true) {
         if (Bukkit.getPluginManager().getPlugin(plugin) != null) {
-            if (! init.getAsBoolean()) {
-                return;
+            if (!init.asBoolean) {
+                return
             }
-
-            HOOK_LIST.add(plugin);
-        }
-        else if (notifyIfMissing) {
-            FunnyGuilds.getPluginLogger().info(plugin + " plugin could not be found, some features may not be available");
+            HOOK_LIST.add(plugin)
+        } else if (notifyIfMissing) {
+            FunnyGuilds.Companion.getPluginLogger().info("$plugin plugin could not be found, some features may not be available")
         }
     }
 
-    public static void tryInit(final String plugin, final BooleanSupplier init) {
-        tryInit(plugin, init, true);
+    fun isPresent(plugin: String?): Boolean {
+        return HOOK_LIST.contains(plugin)
     }
-
-    public static boolean isPresent(final String plugin) {
-        return HOOK_LIST.contains(plugin);
-    }
-
-    private PluginHook() {
-    }
-
 }

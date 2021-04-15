@@ -1,35 +1,19 @@
-package net.dzikoysk.funnyguilds.event.guild;
+package net.dzikoysk.funnyguilds.event.guild
 
-import net.dzikoysk.funnyguilds.event.FunnyEvent;
-import org.bukkit.block.Block;
-import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.NotNull;
+import net.dzikoysk.funnyguilds.event.FunnyEvent
 
-import java.util.List;
+org.bukkit.block.Blockimport org.bukkit.event.HandlerList
+import java.lang.StackTraceElement
 
-public class GuildEntityExplodeEvent extends FunnyEvent {
-    private static final HandlerList HANDLER_LIST = new HandlerList();
+class GuildEntityExplodeEvent(cause: EventCause?, val affectedBlocks: List<Block?>) : FunnyEvent(cause, null) {
+    override val defaultCancelMessage: String
+        get() = "[FunnyGuilds] Region entity explode has been cancelled by the server!"
 
-    private final List<Block> affectedBlocks;
-
-    public GuildEntityExplodeEvent(EventCause cause, List<Block> affectedBlocks) {
-        super(cause, null);
-        this.affectedBlocks = affectedBlocks;
+    override fun getHandlers(): HandlerList {
+        return handlerList
     }
 
-    public List<Block> getAffectedBlocks() {
-        return affectedBlocks;
-    }
-
-    @Override
-    public String getDefaultCancelMessage() {
-        return "[FunnyGuilds] Region entity explode has been cancelled by the server!";
-    }
-
-    public static HandlerList getHandlerList() { return HANDLER_LIST; }
-
-    @Override
-    public @NotNull HandlerList getHandlers() {
-        return HANDLER_LIST;
+    companion object {
+        val handlerList = HandlerList()
     }
 }

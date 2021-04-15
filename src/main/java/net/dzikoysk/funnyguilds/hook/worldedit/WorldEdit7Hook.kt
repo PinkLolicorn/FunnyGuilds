@@ -1,54 +1,40 @@
-package net.dzikoysk.funnyguilds.hook.worldedit;
+package net.dzikoysk.funnyguilds.hook.worldedit
 
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.WorldEditException;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.session.ClipboardHolder;
-import com.sk89q.worldedit.world.World;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import org.bukkit.Location;
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.WorldEditException
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.session.ClipboardHolder
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import org.bukkit.Location
+import java.io.*
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-
-public class WorldEdit7Hook implements WorldEditHook {
-
-    @Override
-    public boolean pasteSchematic(File schematicFile, Location location, boolean withAir) {
-        try {
-            BlockVector3 pasteLocation = BlockVector3.at(location.getX(), location.getY(), location.getZ());
-            World pasteWorld = BukkitAdapter.adapt(location.getWorld());
-
-            Clipboard clipboard = ClipboardFormats.findByFile(schematicFile).getReader(new FileInputStream(schematicFile)).read();
-            ClipboardHolder clipboardHolder = new ClipboardHolder(clipboard);
-
-            EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(pasteWorld, -1);
-
-            Operation operation = clipboardHolder
-                    .createPaste(editSession)
-                    .to(pasteLocation)
-                    .ignoreAirBlocks(!withAir)
-                    .build();
-
-            Operations.complete(operation);
-            editSession.close();
-            return true;
-        }
-        catch (IOException | WorldEditException e) {
-            FunnyGuilds.getPluginLogger().error("Could not paste schematic: " + schematicFile.getAbsolutePath(), e);
-            return false;
+class WorldEdit7Hook : WorldEditHook {
+    override fun pasteSchematic(schematicFile: File, location: Location, withAir: Boolean): Boolean {
+        return try {
+            val pasteLocation = BlockVector3.at(location.x, location.y, location.z)
+            val pasteWorld = BukkitAdapter.adapt(location.world)
+            val clipboard = ClipboardFormats.findByFile(schematicFile)!!.getReader(FileInputStream(schematicFile)).read()
+            val clipboardHolder = ClipboardHolder(clipboard)
+            val editSession = WorldEdit.getInstance().editSessionFactory.getEditSession(pasteWorld, -1)
+            val operation = clipboardHolder
+                .createPaste(editSession)
+                .to(pasteLocation)
+                .ignoreAirBlocks(!withAir)
+                .build()
+            Operations.complete(operation)
+            editSession.close()
+            true
+        } catch (e: IOException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not paste schematic: " + schematicFile.absolutePath, e)
+            false
+        } catch (e: WorldEditException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not paste schematic: " + schematicFile.absolutePath, e)
+            false
         }
     }
 
-    @Override
-    public void init() {
-
-    }
+    override fun init() {}
 }

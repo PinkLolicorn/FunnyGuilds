@@ -1,36 +1,44 @@
-package net.dzikoysk.funnyguilds.event.guild;
+package net.dzikoysk.funnyguilds.event.guild
 
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import org.bukkit.event.HandlerList;
+import net.dzikoysk.funnyguilds.basic.guild.Guild
 
-public class GuildLivesChangeEvent extends GuildEvent {
+net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawnimport
 
-    private final int newLives;
-    private static final HandlerList handlers = new HandlerList();
+org.bukkit.event.HandlerList
+import java.lang.StackTraceElement
 
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
+class GuildLivesChangeEvent(eventCause: EventCause?, doer: User?, guild: Guild?, val newLives: Int) : GuildEvent(eventCause, doer, guild) {
+    override fun getHandlers(): HandlerList {
+        return handlerList
     }
 
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-    
-    public GuildLivesChangeEvent(EventCause eventCause, User doer, Guild guild, int newLives) {
-        super(eventCause, doer, guild);
-        
-        this.newLives = newLives;
-    }
+    override val defaultCancelMessage: String
+        get() = "[FunnyGuilds] Guild lives change has been cancelled by the server!"
 
-    public int getNewLives() {
-        return this.newLives;
+    companion object {
+        val handlerList = HandlerList()
     }
-
-    @Override
-    public String getDefaultCancelMessage() {
-        return "[FunnyGuilds] Guild lives change has been cancelled by the server!";
-    }
-    
 }

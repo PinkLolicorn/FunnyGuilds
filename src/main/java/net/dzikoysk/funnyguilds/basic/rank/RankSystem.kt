@@ -1,9 +1,5 @@
-package net.dzikoysk.funnyguilds.basic.rank;
+package net.dzikoysk.funnyguilds.basic.rank
 
-public enum RankSystem {
-
-    ELO,
-    PERCENT,
-    STATIC
-
+enum class RankSystem {
+    ELO, PERCENT, STATIC
 }

@@ -1,214 +1,150 @@
-package net.dzikoysk.funnyguilds.basic.rank;
+package net.dzikoysk.funnyguilds.basic.rank
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.Basic;
-import net.dzikoysk.funnyguilds.basic.BasicType;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.user.User;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.Basic
+import net.dzikoysk.funnyguilds.basic.BasicType
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.basic.user.User
 
-public class Rank implements Comparable<Rank> {
-
-    private final BasicType type;
-    private final Basic basic;
-    private final String identityName;
-    private Guild guild;
-    private User user;
-    private int position;
-    private int points;
-    private int kills;
-    private int deaths;
-
-    public Rank(Basic basic) {
-        this.basic = basic;
-        this.type = basic.getType();
-        this.identityName = basic.getName();
-
-        if (this.type == BasicType.GUILD) {
-            this.guild = (Guild) basic;
+class Rank(val basic: Basic) : Comparable<Rank> {
+    val type: BasicType?
+    val identityName: String?
+    var guild: Guild? = null
+    var user: User? = null
+    var position = 0
+    private var points = 0
+    private var kills = 0
+    private var deaths = 0
+    fun removePoints(value: Int) {
+        points -= value
+        if (points < 1) {
+            points = 0
         }
-        else if (this.type == BasicType.USER) {
-            this.user = (User) basic;
-            this.points = FunnyGuilds.getInstance().getPluginConfiguration().rankStart;
-        }
+        basic.markChanged()
     }
 
-    public void removePoints(int value) {
-        this.points -= value;
-
-        if (this.points < 1) {
-            this.points = 0;
-        }
-
-        this.basic.markChanged();
+    fun addPoints(value: Int) {
+        points += value
+        basic.markChanged()
     }
 
-    public void addPoints(int value) {
-        this.points += value;
-        this.basic.markChanged();
+    fun addKill() {
+        kills++
+        basic.markChanged()
     }
 
-    public void addKill() {
-        this.kills++;
-        this.basic.markChanged();
+    fun addDeath() {
+        deaths++
+        basic.markChanged()
     }
 
-    public void addDeath() {
-        this.deaths++;
-        this.basic.markChanged();
-    }
-
-    @Override
-    public int compareTo(Rank rank) {
-        int result = Integer.compare(this.getPoints(), rank.getPoints());
-
+    override fun compareTo(rank: Rank): Int {
+        var result = Integer.compare(getPoints(), rank.getPoints())
         if (result == 0) {
             if (identityName == null) {
-                return -1;
+                return -1
             }
-
-            if (rank.getIdentityName() == null) {
-                return 1;
+            if (rank.identityName == null) {
+                return 1
             }
-
-            result = identityName.compareTo(rank.getIdentityName());
+            result = identityName.compareTo(rank.identityName)
         }
-
-        return result;
+        return result
     }
 
-    public int getPoints() {
-        if (this.type == BasicType.USER) {
-            return this.points;
+    fun getPoints(): Int {
+        if (type == BasicType.USER) {
+            return points
         }
-
-        double points = 0;
-        int size = guild.getMembers().size();
-
+        var points = 0.0
+        val size = guild!!.members.size
         if (size == 0) {
-            return 0;
+            return 0
         }
-
-        for (User user : guild.getMembers()) {
-            points += user.getRank().getPoints();
+        for (user in guild.members) {
+            points += user.rank.points.toDouble()
         }
-
-        double calc = points / size;
-
-        if (calc != this.points) {
-            this.points = (int) calc;
-            this.basic.markChanged();
+        val calc = points / size
+        if (calc != this.points.toDouble()) {
+            this.points = calc.toInt()
+            basic.markChanged()
         }
-
-        return this.points;
+        return this.points
     }
 
-    public void setPoints(int points) {
-        this.points = points;
-        this.basic.markChanged();
+    fun setPoints(points: Int) {
+        this.points = points
+        basic.markChanged()
     }
 
-    public int getPosition() {
-        return position;
-    }
-
-    public void setPosition(int position) {
-        this.position = position;
-    }
-
-    public int getKills() {
-        if (this.type == BasicType.USER) {
-            return this.kills;
+    fun getKills(): Int {
+        if (type == BasicType.USER) {
+            return kills
         }
-        
-        int kills = 0;
-
-        for (User user : this.guild.getMembers()) {
-            kills += user.getRank().getKills();
+        var kills = 0
+        for (user in guild!!.members) {
+            kills += user.rank.kills
         }
-        
-        return kills;
+        return kills
     }
 
-    public void setKills(int kills) {
-        this.kills = kills;
-        this.basic.markChanged();
+    fun setKills(kills: Int) {
+        this.kills = kills
+        basic.markChanged()
     }
 
-    public int getDeaths() {
-        if (this.type == BasicType.USER) {
-            return this.deaths;
+    fun getDeaths(): Int {
+        if (type == BasicType.USER) {
+            return deaths
         }
-        
-        int deaths = 0;
-        for (User user : this.guild.getMembers()) {
-            deaths += user.getRank().getDeaths();
+        var deaths = 0
+        for (user in guild!!.members) {
+            deaths += user.rank.deaths
         }
-        
-        return deaths;
+        return deaths
     }
 
-    public void setDeaths(int deaths) {
-        this.deaths = deaths;
-        this.basic.markChanged();
+    fun setDeaths(deaths: Int) {
+        this.deaths = deaths
+        basic.markChanged()
     }
 
-    public float getKDR() {
-        if (getDeaths() == 0) {
-            return getKills();
-        }
-    
-        return 1.0F * getKills() / getDeaths();
-    }
-    
-    public String getIdentityName() {
-        return identityName;
-    }
+    val kDR: Float
+        get() = if (getDeaths() == 0) {
+            getKills().toFloat()
+        } else 1.0f * getKills() / getDeaths()
 
-    public BasicType getType() {
-        return type;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public Guild getGuild() {
-        return guild;
-    }
-
-    public Basic getBasic() {
-        return basic;
-    }
-
-    @Override
-    public boolean equals(Object o) {
+    override fun equals(o: Any?): Boolean {
         if (o == null) {
-            return false;
+            return false
         }
-
-        if (o.getClass() != this.getClass()) {
-            return false;
+        if (o.javaClass != this.javaClass) {
+            return false
         }
-
-        final Rank rank = (Rank) o;
-
-        if (rank.getType() != this.type) {
-            return false;
-        }
-
-        return rank.getIdentityName().equals(this.identityName);
+        val rank = o as Rank
+        return if (rank.type != type) {
+            false
+        } else rank.identityName == identityName
     }
 
-    @Override
-    public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + identityName.hashCode();
-        return result;
+    override fun hashCode(): Int {
+        var result = type.hashCode()
+        result = 31 * result + identityName.hashCode()
+        return result
     }
 
-    @Override
-    public String toString() {
-        return Integer.toString(getPoints());
+    override fun toString(): String {
+        return Integer.toString(getPoints())
     }
 
+    init {
+        type = basic.type
+        identityName = basic.name
+        if (type == BasicType.GUILD) {
+            guild = basic as Guild
+        } else if (type == BasicType.USER) {
+            user = basic as User
+            points = FunnyGuilds.Companion.getInstance().getPluginConfiguration().rankStart
+        }
+    }
 }

@@ -1,101 +1,79 @@
-package net.dzikoysk.funnyguilds.data;
+package net.dzikoysk.funnyguilds.data
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.data.util.InvitationList;
-import net.dzikoysk.funnyguilds.util.YamlWrapper;
-import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitTask;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.data.util.InvitationList
+import net.dzikoysk.funnyguilds.util.YamlWrapper
+import org.bukkit.Bukkit
+import org.bukkit.scheduler.BukkitTask
+import java.io.File
+import java.util.*
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+class InvitationPersistenceHandler(private val funnyGuilds: FunnyGuilds) {
+    private val invitationsFile: File
 
-public class InvitationPersistenceHandler {
-
-    private final    FunnyGuilds funnyGuilds;
-    private final    File        invitationsFile;
-    private volatile BukkitTask  invitationPersistenceHandlerTask;
-
-    public InvitationPersistenceHandler(FunnyGuilds funnyGuilds) {
-        this.funnyGuilds = funnyGuilds;
-        this.invitationsFile = new File(funnyGuilds.getPluginDataFolder(), "invitations.yml");
-    }
-
-    public void startHandler() {
-        long interval = this.funnyGuilds.getPluginConfiguration().dataInterval * 60L * 20L;
-
-        if (this.invitationPersistenceHandlerTask != null) {
-            this.invitationPersistenceHandlerTask.cancel();
+    @Volatile
+    private var invitationPersistenceHandlerTask: BukkitTask? = null
+    fun startHandler() {
+        val interval = funnyGuilds.pluginConfiguration.dataInterval * 60L * 20L
+        if (invitationPersistenceHandlerTask != null) {
+            invitationPersistenceHandlerTask!!.cancel()
         }
-
-        this.invitationPersistenceHandlerTask = Bukkit.getScheduler().runTaskTimerAsynchronously(funnyGuilds, this::saveInvitations, interval, interval);
+        invitationPersistenceHandlerTask = Bukkit.getScheduler().runTaskTimerAsynchronously(funnyGuilds, Runnable { saveInvitations() }, interval, interval)
     }
 
-    public void stopHandler() {
-        if (this.invitationPersistenceHandlerTask == null) {
-            return;
+    fun stopHandler() {
+        if (invitationPersistenceHandlerTask == null) {
+            return
         }
-
-        this.invitationPersistenceHandlerTask.cancel();
-        this.invitationPersistenceHandlerTask = null;
+        invitationPersistenceHandlerTask!!.cancel()
+        invitationPersistenceHandlerTask = null
     }
 
-    public void saveInvitations() {
-        this.invitationsFile.delete();
-        YamlWrapper wrapper = new YamlWrapper(this.invitationsFile);
-
-        for (Guild guild : GuildUtils.getGuilds()) {
-            List<InvitationList.Invitation> invitationList = InvitationList.getInvitationsFrom(guild);
-
-            for (InvitationList.Invitation invitation : invitationList) {
-                List<String> allyInvitations = new ArrayList<>();
-                List<String> playerInvitations = new ArrayList<>();
-
-                if (invitation.isToGuild()) {
-                    playerInvitations.add(invitation.getFor().toString());
+    fun saveInvitations() {
+        invitationsFile.delete()
+        val wrapper = YamlWrapper(invitationsFile)
+        for (guild in GuildUtils.getGuilds()) {
+            val invitationList = InvitationList.getInvitationsFrom(guild)
+            for (invitation in invitationList!!) {
+                val allyInvitations: MutableList<String> = ArrayList()
+                val playerInvitations: MutableList<String> = ArrayList()
+                if (invitation!!.isToGuild) {
+                    playerInvitations.add(invitation.getFor().toString())
+                } else if (invitation.isToAlly) {
+                    allyInvitations.add(invitation.getFor().toString())
                 }
-                else if (invitation.isToAlly()) {
-                    allyInvitations.add(invitation.getFor().toString());
-                }
-
-                wrapper.set(invitation.getFrom().toString() + ".guilds", allyInvitations);
-                wrapper.set(invitation.getFrom().toString() + ".players", playerInvitations);
+                wrapper[invitation.from.toString() + ".guilds"] = allyInvitations
+                wrapper[invitation.from.toString() + ".players"] = playerInvitations
             }
         }
-
-        wrapper.save();
+        wrapper.save()
     }
 
-    public void loadInvitations() {
-        if (! this.invitationsFile.exists()) {
-            return;
+    fun loadInvitations() {
+        if (!invitationsFile.exists()) {
+            return
         }
-
-        YamlWrapper pc = new YamlWrapper(this.invitationsFile);
-
-        for (String key : pc.getKeys(false)) {
-            Guild guild = GuildUtils.getByUUID(UUID.fromString(key));
-
+        val pc = YamlWrapper(invitationsFile)
+        for (key in pc.getKeys(false)) {
+            val guild = GuildUtils.getByUUID(UUID.fromString(key))
             if (guild != null) {
-                List<String> allyInvitations = pc.getStringList(key + ".guilds");
-                List<String> playerInvitations = pc.getStringList(key + ".players");
-
-                for (String ally : allyInvitations) {
-                    Guild allyGuild = GuildUtils.getByUUID(UUID.fromString(ally));
-
+                val allyInvitations = pc.getStringList("$key.guilds")
+                val playerInvitations = pc.getStringList("$key.players")
+                for (ally in allyInvitations) {
+                    val allyGuild = GuildUtils.getByUUID(UUID.fromString(ally))
                     if (allyGuild != null) {
-                        InvitationList.createInvitation(guild, allyGuild);
+                        InvitationList.createInvitation(guild, allyGuild)
                     }
                 }
-
-                for (String player : playerInvitations) {
-                    InvitationList.createInvitation(guild, UUID.fromString(player));
+                for (player in playerInvitations) {
+                    InvitationList.createInvitation(guild, UUID.fromString(player))
                 }
             }
         }
     }
 
+    init {
+        invitationsFile = File(funnyGuilds.pluginDataFolder, "invitations.yml")
+    }
 }

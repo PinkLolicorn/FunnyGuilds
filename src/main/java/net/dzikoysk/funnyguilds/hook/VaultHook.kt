@@ -1,67 +1,55 @@
-package net.dzikoysk.funnyguilds.hook;
+package net.dzikoysk.funnyguilds.hook
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.economy.EconomyResponse;
-import net.milkbowl.vault.permission.Permission;
-import org.apache.commons.lang3.Validate;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.milkbowl.vault.economy.Economy
+import net.milkbowl.vault.economy.EconomyResponse
+import net.milkbowl.vault.permission.Permission
+import org.apache.commons.lang3.Validate
+import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
+import org.bukkit.entity.Player
 
-public final class VaultHook {
-
-    private static Economy economyHook;
-    private static Permission permissionHook;
-
-    public static void initHooks() {
-        RegisteredServiceProvider<Economy> economyProvider = Bukkit.getServer().getServicesManager().getRegistration(Economy.class);
-        RegisteredServiceProvider<Permission> permissionProvider = Bukkit.getServer().getServicesManager().getRegistration(Permission.class);
-
+object VaultHook {
+    private var economyHook: Economy? = null
+    private var permissionHook: Permission? = null
+    fun initHooks() {
+        val economyProvider = Bukkit.getServer().servicesManager.getRegistration(Economy::class.java)
+        val permissionProvider = Bukkit.getServer().servicesManager.getRegistration(
+            Permission::class.java
+        )
         if (economyProvider != null) {
-            economyHook = economyProvider.getProvider();
+            economyHook = economyProvider.provider
+        } else {
+            FunnyGuilds.Companion.getPluginLogger().warning("No economy provider found, some features may not be available")
         }
-        else {
-            FunnyGuilds.getPluginLogger().warning("No economy provider found, some features may not be available");
-        }
-
         if (permissionProvider != null) {
-            permissionHook = permissionProvider.getProvider();
+            permissionHook = permissionProvider.provider
+        } else {
+            FunnyGuilds.Companion.getPluginLogger().warning("No permission provider found, some features may not be available")
         }
-        else {
-            FunnyGuilds.getPluginLogger().warning("No permission provider found, some features may not be available");
-        }
     }
 
-    public static boolean isEconomyHooked() {
-        return economyHook != null;
+    val isEconomyHooked: Boolean
+        get() = economyHook != null
+    val isPermissionHooked: Boolean
+        get() = permissionHook != null
+
+    fun accountBalance(player: Player): Double {
+        Validate.notNull(player, "Player can not be null!")
+        return economyHook!!.getBalance(player)
     }
 
-    public static boolean isPermissionHooked() {
-        return permissionHook != null;
+    fun canAfford(player: Player, money: Double): Boolean {
+        Validate.notNull(player, "Player can not be null!")
+        return economyHook!!.has(player, money)
     }
 
-    public static double accountBalance(Player player) {
-        Validate.notNull(player, "Player can not be null!");
-        return economyHook.getBalance(player);
+    fun withdrawFromPlayerBank(player: Player, money: Double): EconomyResponse {
+        Validate.notNull(player, "Player can not be null!")
+        return economyHook!!.withdrawPlayer(player, money)
     }
 
-    public static boolean canAfford(Player player, double money) {
-        Validate.notNull(player, "Player can not be null!");
-        return economyHook.has(player, money);
+    fun hasPermission(player: OfflinePlayer?, permission: String?): Boolean {
+        return permissionHook!!.playerHas(null, player, permission)
     }
-
-    public static EconomyResponse withdrawFromPlayerBank(Player player, double money) {
-        Validate.notNull(player, "Player can not be null!");
-        return economyHook.withdrawPlayer(player, money);
-    }
-
-    public static boolean hasPermission(OfflinePlayer player, String permission) {
-        return permissionHook.playerHas(null, player, permission);
-    }
-
-    private VaultHook() {
-    }
-
 }

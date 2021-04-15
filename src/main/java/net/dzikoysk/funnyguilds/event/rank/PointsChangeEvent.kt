@@ -1,29 +1,44 @@
-package net.dzikoysk.funnyguilds.event.rank;
+package net.dzikoysk.funnyguilds.event.rank
 
-import net.dzikoysk.funnyguilds.basic.rank.Rank;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import org.bukkit.event.HandlerList;
+import net.dzikoysk.funnyguilds.basic.rank.Rank
 
-public class PointsChangeEvent extends RankChangeEvent {
+net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawnimport
 
-    private static final HandlerList handlers = new HandlerList();
+org.bukkit.event.HandlerList
+import java.lang.StackTraceElement
 
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
+class PointsChangeEvent(eventCause: EventCause?, rank: Rank?, doer: User?, change: Int) : RankChangeEvent(eventCause, rank, doer, change) {
+    override fun getHandlers(): HandlerList {
+        return handlerList
     }
 
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-    
-    public PointsChangeEvent(EventCause eventCause, Rank rank, User doer, int change) {
-        super(eventCause, rank, doer, change);
-    }
+    override val defaultCancelMessage: String
+        get() = "[FunnyGuilds] Points change has been cancelled by the server!"
 
-    @Override
-    public String getDefaultCancelMessage() {
-        return "[FunnyGuilds] Points change has been cancelled by the server!";
+    companion object {
+        val handlerList = HandlerList()
     }
-    
 }

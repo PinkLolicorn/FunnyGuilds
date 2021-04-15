@@ -1,72 +1,55 @@
-package net.dzikoysk.funnyguilds.util.metrics;
+package net.dzikoysk.funnyguilds.util.metrics
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.basic.user.UserUtils;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
 
-import java.util.HashMap;
-
-public class MetricsCollector implements Runnable {
-
-    private final FunnyGuilds plugin;
-
-    private MCStats mcstats;
-    private BStats bstats;
-
-    public MetricsCollector(FunnyGuilds plugin) {
-        this.plugin = plugin;
-        try {
-            mcstats = new MCStats(plugin);
-        }
-        catch (Exception ex) {
-            this.mcstats = null;
-            FunnyGuilds.getPluginLogger().error("Could not initialize mcstats", ex);
-        }
-        try {
-            this.bstats = new BStats(plugin);
-        }
-        catch (Exception ex) {
-            this.bstats = null;
-            FunnyGuilds.getPluginLogger().error("Could not initialize bstats", ex);
-        }
+class MetricsCollector(private val plugin: FunnyGuilds) : Runnable {
+    private var mcstats: MCStats? = null
+    private var bstats: BStats? = null
+    fun start() {
+        plugin.server.scheduler.runTaskLaterAsynchronously(plugin, this, 20L)
     }
 
-    public void start() {
-        this.plugin.getServer().getScheduler().runTaskLaterAsynchronously(this.plugin, this, 20L);
-    }
-
-    @Override
-    public void run() {
+    override fun run() {
         // mcstats
-        MCStats mcstats = this.mcstats;
+        val mcstats = mcstats
         if (mcstats != null) {
-            MCStats.Graph global = mcstats.createGraph("Guilds and Users");
-            global.addPlotter(new MCStats.Plotter("Guilds") {
-                @Override
-                public int getValue() {
-                    return GuildUtils.getGuilds().size();
-                }
-            });
-            global.addPlotter(new MCStats.Plotter("Users") {
-                @Override
-                public int getValue() {
-                    return UserUtils.usersSize();
-                }
-            });
-            mcstats.start();
+            val global = mcstats.createGraph("Guilds and Users")
+            global!!.addPlotter(object : MCStats.Plotter("Guilds") {
+                override val value: Int
+                    get() = GuildUtils.getGuilds().size
+            })
+            global.addPlotter(object : MCStats.Plotter("Users") {
+                override val value: Int
+                    get() = UserUtils.usersSize()
+            })
+            mcstats.start()
         }
 
         // bstats
-        BStats bstats = this.bstats;
-        if (bstats != null) {
-            bstats.addCustomChart(new BStats.MultiLineChart("Guilds and Users") {
-                @Override
-                public HashMap<String, Integer> getValues(HashMap<String, Integer> hashMap) {
-                    hashMap.put("Guilds", GuildUtils.getGuilds().size());
-                    hashMap.put("Users", UserUtils.usersSize());
-                    return hashMap;
-                }
-            });
+        val bstats = bstats
+        bstats?.addCustomChart(object : BStats.MultiLineChart("Guilds and Users") {
+            override fun getValues(hashMap: HashMap<String?, Int>): HashMap<String?, Int>? {
+                hashMap["Guilds"] = GuildUtils.getGuilds().size
+                hashMap["Users"] = UserUtils.usersSize()
+                return hashMap
+            }
+        })
+    }
+
+    init {
+        try {
+            mcstats = MCStats(plugin)
+        } catch (ex: Exception) {
+            mcstats = null
+            FunnyGuilds.Companion.getPluginLogger().error("Could not initialize mcstats", ex)
+        }
+        try {
+            bstats = BStats(plugin)
+        } catch (ex: Exception) {
+            bstats = null
+            FunnyGuilds.Companion.getPluginLogger().error("Could not initialize bstats", ex)
         }
     }
 }

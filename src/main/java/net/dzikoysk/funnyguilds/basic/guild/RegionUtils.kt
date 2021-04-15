@@ -1,146 +1,117 @@
-package net.dzikoysk.funnyguilds.basic.guild;
+package net.dzikoysk.funnyguilds.basic.guild
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration;
-import net.dzikoysk.funnyguilds.data.database.DatabaseRegion;
-import net.dzikoysk.funnyguilds.data.database.SQLDataModel;
-import net.dzikoysk.funnyguilds.data.flat.FlatDataModel;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils;
-import org.bukkit.Location;
-import org.panda_lang.utilities.commons.function.Option;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration
+import net.dzikoysk.funnyguilds.data.database.DatabaseRegion
+import net.dzikoysk.funnyguilds.data.database.SQLDataModel
+import net.dzikoysk.funnyguilds.data.flat.FlatDataModel
+import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils
+import org.bukkit.Location
+import org.panda_lang.utilities.commons.function.Option
+import java.util.concurrent.ConcurrentHashMap
 
-import javax.annotation.Nullable;
+object RegionUtils {
+    val REGION_LIST: MutableSet<Region?> = ConcurrentHashMap.newKeySet()
+    val regions: Set<Region?>
+        get() = HashSet(REGION_LIST)
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-public final class RegionUtils {
-
-    public static final Set<Region> REGION_LIST = ConcurrentHashMap.newKeySet();
-
-    public static Set<Region> getRegions() {
-        return new HashSet<>(REGION_LIST);
-    }
-
-    public static Region get(String name) {
+    operator fun get(name: String?): Region? {
         if (name == null) {
-            return null;
+            return null
         }
-        
-        for (Region region : REGION_LIST) {
-            if (name.equalsIgnoreCase(region.getName())) {
-                return region;
+        for (region in REGION_LIST) {
+            if (name.equals(region!!.name, ignoreCase = true)) {
+                return region
             }
         }
-        
-        return null;
+        return null
     }
 
-    public static boolean isIn(Location location) {
-        for (Region region : REGION_LIST) {
-            if (region.isIn(location)) {
-                return true;
+    fun isIn(location: Location?): Boolean {
+        for (region in REGION_LIST) {
+            if (region!!.isIn(location)) {
+                return true
             }
         }
-        
-        return false;
+        return false
     }
 
-    public static Region getAt(Location location) {
-        for (Region region : REGION_LIST) {
-            if (region.isIn(location)) {
-                return region;
+    fun getAt(location: Location?): Region? {
+        for (region in REGION_LIST) {
+            if (region!!.isIn(location)) {
+                return region
             }
         }
-        
-        return null;
+        return null
     }
 
-    public static Option<Region> getAtOpt(Location location) {
-        return Option.of(getAt(location));
+    fun getAtOpt(location: Location?): Option<Region?> {
+        return Option.of(getAt(location))
     }
 
-    public static boolean isNear(Location center) {
+    fun isNear(center: Location?): Boolean {
         if (center == null) {
-            return false;
+            return false
         }
-
-        PluginConfiguration config = FunnyGuilds.getInstance().getPluginConfiguration();
-        int size = config.regionSize;
-
+        val config: PluginConfiguration = FunnyGuilds.Companion.getInstance().getPluginConfiguration()
+        var size = config.regionSize
         if (config.enlargeItems != null) {
-            size += (config.enlargeItems.size() * config.enlargeSize);
+            size += config.enlargeItems!!.size * config.enlargeSize
         }
-        
-        int requiredDistance = (2 * size) + config.regionMinDistance;
-
-        for (Region region : REGION_LIST) {
+        val requiredDistance = 2 * size + config.regionMinDistance
+        for (region in REGION_LIST) {
             if (region.getCenter() == null) {
-                continue;
+                continue
             }
-            
-            if (region.getCenter().equals(center)) {
-                continue;
+            if (region.getCenter() == center) {
+                continue
             }
-            
-            if (!center.getWorld().equals(region.getCenter().getWorld())) {
-                continue;
+            if (center.world != region.getCenter().world) {
+                continue
             }
-            
             if (LocationUtils.flatDistance(center, region.getCenter()) < requiredDistance) {
-                return true;
+                return true
             }
         }
-        
-        return false;
+        return false
     }
 
-    public static void delete(@Nullable Region region) {
+    fun delete(region: Region?) {
         if (region == null) {
-            return;
+            return
         }
-
-        if (FunnyGuilds.getInstance().getDataModel() instanceof FlatDataModel) {
-            FlatDataModel dataModel = (FlatDataModel) FunnyGuilds.getInstance().getDataModel();
-            dataModel.getRegionFile(region).delete();
+        if (FunnyGuilds.Companion.getInstance().getDataModel() is FlatDataModel) {
+            val dataModel = FunnyGuilds.Companion.getInstance().getDataModel() as FlatDataModel
+            dataModel.getRegionFile(region).delete()
         }
-
-        if (FunnyGuilds.getInstance().getDataModel() instanceof SQLDataModel) {
-            DatabaseRegion.delete(region);
+        if (FunnyGuilds.Companion.getInstance().getDataModel() is SQLDataModel) {
+            DatabaseRegion.delete(region)
         }
-        
-        region.delete();
+        region.delete()
     }
 
-    public static List<String> getNames(Collection<Region> lsg) {
-        List<String> list = new ArrayList<>();
+    fun getNames(lsg: Collection<Region?>?): MutableList<String?> {
+        val list: MutableList<String?> = ArrayList()
         if (lsg == null) {
-            return list;
+            return list
         }
-        
-        for (Region r : lsg) {
-            if (r != null && r.getName() != null) {
-                list.add(r.getName());
+        for (r in lsg) {
+            if (r != null && r.name != null) {
+                list.add(r.name)
             }
         }
-        
-        return list;
+        return list
     }
 
-    public static void addRegion(Region region) {
-        REGION_LIST.add(region);
+    fun addRegion(region: Region?) {
+        REGION_LIST.add(region)
     }
 
-    public static void removeRegion(Region region) {
-        REGION_LIST.remove(region);
+    fun removeRegion(region: Region?) {
+        REGION_LIST.remove(region)
     }
 
-    public static String toString(@Nullable Region region) {
-        return region != null ? region.getName() : "null";
+    fun toString(region: Region?): String? {
+        return if (region != null) region.name else "null"
     }
-
 }

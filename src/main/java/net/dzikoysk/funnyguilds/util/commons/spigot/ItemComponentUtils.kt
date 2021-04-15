@@ -1,129 +1,109 @@
-package net.dzikoysk.funnyguilds.util.commons.spigot;
+package net.dzikoysk.funnyguilds.util.commons.spigot
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.MaterialUtils;
-import net.dzikoysk.funnyguilds.util.nms.Reflections;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
-import org.bukkit.inventory.ItemStack;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MaterialUtils
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import net.md_5.bungee.api.ChatColor
+import net.md_5.bungee.api.chat.BaseComponent
+import net.md_5.bungee.api.chat.HoverEvent
+import net.md_5.bungee.api.chat.TextComponent
+import org.bukkit.inventory.ItemStack
+import java.lang.reflect.Constructor
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
-
-public final class ItemComponentUtils {
-
-    private static final Constructor<?> NBT_TAG_COMPOUND_CONSTRUCTOR;
-
-    private static final Method AS_NMS_COPY;
-    private static final Method SAVE;
-
-    static {
-        Class<?> craftItemStack = Reflections.getCraftBukkitClass("inventory.CraftItemStack");
-        AS_NMS_COPY = Reflections.getMethod(craftItemStack, "asNMSCopy", ItemStack.class);
-
-        Class<?> nmsItemStack = Reflections.getNMSClass("ItemStack");
-        Class<?> nbtTagCompound = Reflections.getNMSClass("NBTTagCompound");
-
-        NBT_TAG_COMPOUND_CONSTRUCTOR = Reflections.getConstructor(nbtTagCompound);
-        SAVE = Reflections.getMethod(nmsItemStack, "save", nbtTagCompound);
-    }
-
-    private ItemComponentUtils() {}
-
-    public static TextComponent translateComponentPlaceholder(String message, List<ItemStack> items, ItemStack item) {
-        TextComponent translatedMessage = new TextComponent();
-        StringBuilder messagePart = new StringBuilder();
-        String messageColor = "";
-        char[] messageChars = message.toCharArray();
-
-        for (int index = 0; index < messageChars.length; index++) {
-            char symbol = messageChars[index];
-
+object ItemComponentUtils {
+    private val NBT_TAG_COMPOUND_CONSTRUCTOR: Constructor<*>? = null
+    private val AS_NMS_COPY: Method? = null
+    private val SAVE: Method? = null
+    fun translateComponentPlaceholder(message: String?, items: List<ItemStack?>?, item: ItemStack?): TextComponent {
+        val translatedMessage = TextComponent()
+        var messagePart = StringBuilder()
+        var messageColor = ""
+        val messageChars = message!!.toCharArray()
+        var index = 0
+        while (index < messageChars.size) {
+            val symbol = messageChars[index]
             if (symbol != '{') {
-                messagePart.append(symbol);
-
+                messagePart.append(symbol)
                 if (symbol == ChatColor.COLOR_CHAR) {
-                    messageColor += symbol;
-
-                    if (index + 1 >= messageChars.length) {
-                        FunnyGuilds.getPluginLogger().warning("Invalid placeholder: " + message + " (exceeds array limit at + " + index + ")");
-                        continue;
+                    messageColor += symbol
+                    if (index + 1 >= messageChars.size) {
+                        FunnyGuilds.Companion.getPluginLogger().warning("Invalid placeholder: $message (exceeds array limit at + $index)")
+                        index++
+                        continue
                     }
-
-                    messageColor += messageChars[index + 1];
+                    messageColor += messageChars[index + 1]
                 }
-                
-                continue;
+                index++
+                continue
             }
-            
-            String subItem = message.substring(index, Math.min(message.length(), index + 6));
-
-            if (subItem.equals("{ITEM}")) {
-                for (BaseComponent extra : TextComponent.fromLegacyText(messagePart.toString())) {
-                    translatedMessage.addExtra(extra);
+            val subItem = message.substring(index, Math.min(message.length, index + 6))
+            if (subItem == "{ITEM}") {
+                for (extra in TextComponent.fromLegacyText(messagePart.toString())) {
+                    translatedMessage.addExtra(extra)
                 }
-                
-                messagePart = new StringBuilder();
-                translatedMessage.addExtra(getItemComponent(item, messageColor));
-                index += 5;
-                continue;
+                messagePart = StringBuilder()
+                translatedMessage.addExtra(getItemComponent(item, messageColor))
+                index += 5
+                index++
+                continue
             }
-
-            String subItems = message.substring(index, Math.min(message.length(), index + 7));
-
-            if (subItems.equals("{ITEMS}")) {
-                for (BaseComponent extra : TextComponent.fromLegacyText(messagePart.toString())) {
-                    translatedMessage.addExtra(extra);
+            val subItems = message.substring(index, Math.min(message.length, index + 7))
+            if (subItems == "{ITEMS}") {
+                for (extra in TextComponent.fromLegacyText(messagePart.toString())) {
+                    translatedMessage.addExtra(extra)
                 }
-
-                messagePart = new StringBuilder();
-                
-                for (int itemNum = 0; itemNum < items.size(); itemNum++) {
-                    translatedMessage.addExtra(getItemComponent(items.get(itemNum), messageColor));
-                    
-                    if (itemNum != items.size() - 1) {
-                        for (BaseComponent extra : TextComponent.fromLegacyText(messageColor + ", ")) {
-                            translatedMessage.addExtra(extra);
+                messagePart = StringBuilder()
+                for (itemNum in items!!.indices) {
+                    translatedMessage.addExtra(getItemComponent(items[itemNum], messageColor))
+                    if (itemNum != items.size - 1) {
+                        for (extra in TextComponent.fromLegacyText("$messageColor, ")) {
+                            translatedMessage.addExtra(extra)
                         }
                     }
                 }
-                
-                index += 6;
-                continue;
+                index += 6
+                index++
+                continue
             }
-
-            messagePart.append(symbol);
+            messagePart.append(symbol)
+            index++
         }
-        
-        for (BaseComponent extra : TextComponent.fromLegacyText(messagePart.toString())) {
-            translatedMessage.addExtra(extra);
+        for (extra in TextComponent.fromLegacyText(messagePart.toString())) {
+            translatedMessage.addExtra(extra)
         }
-        
-        return translatedMessage;
+        return translatedMessage
     }
 
-    public static TextComponent getItemComponent(ItemStack item, String messageColor) {
-        TextComponent itemComponent = new TextComponent();
-        PluginConfiguration config = FunnyGuilds.getInstance().getPluginConfiguration();
-
-        for (BaseComponent extra : TextComponent.fromLegacyText(messageColor + item.getAmount() + config.itemAmountSuffix + " " + MaterialUtils.getMaterialName(item.getType()))) {
-            itemComponent.addExtra(extra);
+    fun getItemComponent(item: ItemStack?, messageColor: String): TextComponent {
+        val itemComponent = TextComponent()
+        val config: PluginConfiguration = FunnyGuilds.Companion.getInstance().getPluginConfiguration()
+        for (extra in TextComponent.fromLegacyText(messageColor + item!!.amount + config.itemAmountSuffix + " " + MaterialUtils.getMaterialName(item.type))) {
+            itemComponent.addExtra(extra)
         }
-        
         try {
-            String jsonItem = SAVE.invoke(AS_NMS_COPY.invoke(null, item), NBT_TAG_COMPOUND_CONSTRUCTOR.newInstance()).toString();
-            itemComponent.setHoverEvent(new HoverEvent(Action.SHOW_ITEM, new BaseComponent[]{new TextComponent(jsonItem)}));
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException exception) {
-            FunnyGuilds.getPluginLogger().error("Could not get item component", exception);
+            val jsonItem = SAVE!!.invoke(AS_NMS_COPY!!.invoke(null, item), NBT_TAG_COMPOUND_CONSTRUCTOR!!.newInstance()).toString()
+            itemComponent.hoverEvent = HoverEvent(HoverEvent.Action.SHOW_ITEM, arrayOf<BaseComponent>(TextComponent(jsonItem)))
+        } catch (exception: IllegalAccessException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not get item component", exception)
+        } catch (exception: IllegalArgumentException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not get item component", exception)
+        } catch (exception: InvocationTargetException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not get item component", exception)
+        } catch (exception: InstantiationException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not get item component", exception)
         }
-        
-        return itemComponent;
+        return itemComponent
     }
 
+    init {
+        val craftItemStack = Reflections.getCraftBukkitClass("inventory.CraftItemStack")
+        AS_NMS_COPY = Reflections.getMethod(net.dzikoysk.funnyguilds.util.commons.spigot.craftItemStack, "asNMSCopy", ItemStack::class.java)
+        val nmsItemStack = Reflections.getNMSClass("ItemStack")
+        val nbtTagCompound = Reflections.getNMSClass("NBTTagCompound")
+        NBT_TAG_COMPOUND_CONSTRUCTOR = Reflections.getConstructor(net.dzikoysk.funnyguilds.util.commons.spigot.nbtTagCompound)
+        SAVE = Reflections.getMethod(net.dzikoysk.funnyguilds.util.commons.spigot.nmsItemStack, "save", net.dzikoysk.funnyguilds.util.commons.spigot.nbtTagCompound)
+    }
 }

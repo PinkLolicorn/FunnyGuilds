@@ -1,237 +1,200 @@
-package net.dzikoysk.funnyguilds.data.util;
+package net.dzikoysk.funnyguilds.data.util
 
-import com.google.common.collect.ImmutableList;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.bukkit.entity.Player;
+import com.google.common.collect.ImmutableList
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.basic.user.User
+import org.apache.commons.lang3.builder.ToStringBuilder
+import org.bukkit.entity.Player
+import java.util.*
+import java.util.stream.Collectors
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
-
-public final class InvitationList {
-
-    private static final Set<Invitation> INVITATION_LIST = new HashSet<>();
-
-    public static void createInvitation(Guild from, Player to) {
-        Invitation invitation = new Invitation(from, to);
-        INVITATION_LIST.add(invitation);
+object InvitationList {
+    private val INVITATION_LIST: MutableSet<Invitation> = HashSet()
+    fun createInvitation(from: Guild, to: Player?) {
+        val invitation = Invitation(from, to)
+        INVITATION_LIST.add(invitation)
     }
 
-    public static void createInvitation(Guild from, Guild to) {
-        Invitation invitation = new Invitation(from, to);
-        INVITATION_LIST.add(invitation);
+    fun createInvitation(from: Guild, to: Guild) {
+        val invitation = Invitation(from, to)
+        INVITATION_LIST.add(invitation)
     }
 
-    public static void createInvitation(Guild from, UUID player) {
-        Invitation invitation = new Invitation(from, player);
-        INVITATION_LIST.add(invitation);
+    fun createInvitation(from: Guild, player: UUID) {
+        val invitation = Invitation(from, player)
+        INVITATION_LIST.add(invitation)
     }
 
-
-    public static void expireInvitation(Guild from, Player to) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToGuild() && invitation.getFrom().equals(from.getUUID()) && invitation.getFor().equals(to.getUniqueId())) {
-                INVITATION_LIST.remove(invitation);
-                break;
-            }
-        }
-    }
-    public static void expireInvitation(Guild from, User to) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToGuild() && invitation.getFrom().equals(from.getUUID()) && invitation.getFor().equals(to.getUUID())) {
-                INVITATION_LIST.remove(invitation);
-                break;
+    fun expireInvitation(from: Guild, to: Player) {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToGuild && invitation.from == from.uuid && invitation.`for` == to.uniqueId) {
+                INVITATION_LIST.remove(invitation)
+                break
             }
         }
     }
 
-    public static void expireInvitation(Guild from, Guild to) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToAlly() && invitation.getFrom().equals(from.getUUID()) && invitation.getFor().equals(to.getUUID())) {
-                INVITATION_LIST.remove(invitation);
-                break;
+    fun expireInvitation(from: Guild, to: User) {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToGuild && invitation.from == from.uuid && invitation.`for` == to.uuid) {
+                INVITATION_LIST.remove(invitation)
+                break
             }
         }
     }
 
-    public static boolean hasInvitation(Player player) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToGuild() && invitation.getFor().equals(player.getUniqueId())) {
-                return true;
+    fun expireInvitation(from: Guild, to: Guild) {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToAlly && invitation.from == from.uuid && invitation.`for` == to.uuid) {
+                INVITATION_LIST.remove(invitation)
+                break
             }
         }
-
-        return false;
     }
 
-    public static boolean hasInvitationFrom(Player player, Guild from) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToGuild() && invitation.getFrom().equals(from.getUUID()) && invitation.getFor().equals(player.getUniqueId())) {
-                return true;
+    fun hasInvitation(player: Player): Boolean {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToGuild && invitation.`for` == player.uniqueId) {
+                return true
             }
         }
-
-        return false;
+        return false
     }
 
-    public static boolean hasInvitationFrom(User player, Guild from) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToGuild() && invitation.getFrom().equals(from.getUUID()) && invitation.getFor().equals(player.getUUID())) {
-                return true;
+    fun hasInvitationFrom(player: Player, from: Guild?): Boolean {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToGuild && invitation.from == from.getUUID() && invitation.`for` == player.uniqueId) {
+                return true
             }
         }
-
-        return false;
+        return false
     }
 
-    public static boolean hasInvitationFrom(Guild guild, Guild from) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToAlly() && invitation.getFrom().equals(from.getUUID()) && invitation.getFor().equals(guild.getUUID())) {
-                return true;
+    fun hasInvitationFrom(player: User, from: Guild): Boolean {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToGuild && invitation.from == from.uuid && invitation.`for` == player.uuid) {
+                return true
             }
         }
-
-        return false;
+        return false
     }
 
-    public static boolean hasInvitation(Guild guild) {
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToAlly() && invitation.getFor().equals(guild.getUUID())) {
-                return true;
+    fun hasInvitationFrom(guild: Guild, from: Guild): Boolean {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToAlly && invitation.from == from.uuid && invitation.`for` == guild.uuid) {
+                return true
             }
         }
-
-        return false;
+        return false
     }
 
-    public static List<Invitation> getInvitations() {
-        return ImmutableList.copyOf(INVITATION_LIST);
+    fun hasInvitation(guild: Guild): Boolean {
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToAlly && invitation.`for` == guild.uuid) {
+                return true
+            }
+        }
+        return false
     }
 
-    public static List<Invitation> getInvitationsFor(Player player) {
+    val invitations: List<Invitation>
+        get() = ImmutableList.copyOf(INVITATION_LIST)
+
+    fun getInvitationsFor(player: Player): List<Invitation> {
         return INVITATION_LIST
-                .stream()
-                .filter(inv -> inv.isToGuild() && inv.getFor().equals(player.getUniqueId()))
-                .collect(Collectors.toList());
+            .stream()
+            .filter { inv: Invitation -> inv.isToGuild && inv.`for` == player.uniqueId }
+            .collect(Collectors.toList())
     }
 
-    public static List<Invitation> getInvitationsFrom(Guild guild) {
+    fun getInvitationsFrom(guild: Guild?): List<Invitation> {
         return INVITATION_LIST
-                .stream()
-                .filter(inv -> inv.getFrom().equals(guild.getUUID()))
-                .collect(Collectors.toList());
+            .stream()
+            .filter { inv: Invitation -> inv.from == guild.getUUID() }
+            .collect(Collectors.toList())
     }
 
-    public static List<Invitation> getInvitationsFor(Guild guild) {
+    fun getInvitationsFor(guild: Guild): List<Invitation> {
         return INVITATION_LIST
-                .stream()
-                .filter(inv -> inv.isToAlly() && inv.getFor().equals(guild.getUUID()))
-                .collect(Collectors.toList());
+            .stream()
+            .filter { inv: Invitation -> inv.isToAlly && inv.`for` == guild.uuid }
+            .collect(Collectors.toList())
     }
 
-    public static List<String> getInvitationGuildNames(Player player) {
-        List<String> guildNames = new ArrayList<>();
-
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToGuild() && invitation.getFor().equals(player.getUniqueId())) {
-                guildNames.add(invitation.wrapFrom().getName());
+    fun getInvitationGuildNames(player: Player): List<String?> {
+        val guildNames: MutableList<String?> = ArrayList()
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToGuild && invitation.`for` == player.uniqueId) {
+                guildNames.add(invitation.wrapFrom()!!.name)
             }
         }
-
-        return guildNames;
+        return guildNames
     }
 
-    public static List<String> getInvitationGuildNames(Guild guild) {
-        List<String> guildNames = new ArrayList<>();
-
-        for (Invitation invitation : INVITATION_LIST) {
-            if (invitation.isToAlly() && invitation.getFor().equals(guild.getUUID())) {
-                guildNames.add(invitation.wrapFrom().getName());
+    fun getInvitationGuildNames(guild: Guild): List<String?> {
+        val guildNames: MutableList<String?> = ArrayList()
+        for (invitation in INVITATION_LIST) {
+            if (invitation.isToAlly && invitation.`for` == guild.uuid) {
+                guildNames.add(invitation.wrapFrom()!!.name)
             }
         }
-
-        return guildNames;
+        return guildNames
     }
 
-    public static final class Invitation {
+    class Invitation {
+        val from: UUID?
+        val `for`: UUID?
+        private val type: InvitationType
 
-        private final UUID from;
-        private final UUID to;
-        private final InvitationType type;
-
-        private Invitation(Guild from, UUID player) {
-            this.from = from.getUUID();
-            this.to = player;
-            this.type = InvitationType.TO_GUILD;
+        constructor(from: Guild, player: UUID) {
+            this.from = from.uuid
+            `for` = player
+            type = InvitationType.TO_GUILD
         }
 
-        private Invitation(Guild from, Player to) {
-            this.from = from.getUUID();
-            this.to = to.getUniqueId();
-            this.type = InvitationType.TO_GUILD;
+        constructor(from: Guild, to: Player?) {
+            this.from = from.uuid
+            `for` = to!!.uniqueId
+            type = InvitationType.TO_GUILD
         }
 
-        private Invitation(Guild from, Guild to) {
-            this.from = from.getUUID();
-            this.to = to.getUUID();
-            this.type = InvitationType.TO_ALLY;
+        constructor(from: Guild, to: Guild) {
+            this.from = from.uuid
+            `for` = to.uuid
+            type = InvitationType.TO_ALLY
         }
 
-        public boolean isToAlly() {
-            return type == InvitationType.TO_ALLY;
+        val isToAlly: Boolean
+            get() = type == InvitationType.TO_ALLY
+        val isToGuild: Boolean
+            get() = type == InvitationType.TO_GUILD
+
+        fun wrapFrom(): Guild? {
+            return GuildUtils.getByUUID(from)
         }
 
-        public boolean isToGuild() {
-            return type == InvitationType.TO_GUILD;
-        }
-
-        public UUID getFrom() {
-            return from;
-        }
-
-        public UUID getFor() {
-            return to;
-        }
-
-        @Nullable
-        private Guild wrapFrom() {
-            return GuildUtils.getByUUID(from);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
+        override fun equals(o: Any?): Boolean {
+            if (this === o) {
+                return true
             }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
+            if (o == null || javaClass != o.javaClass) {
+                return false
             }
-            Invitation that = (Invitation) o;
-            return Objects.equals(from, that.from) && Objects.equals(to, that.to) && type == that.type;
+            val that = o as Invitation
+            return from == that.from && `for` == that.`for` && type == that.type
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(from, to, type);
+        override fun hashCode(): Int {
+            return Objects.hash(from, `for`, type)
         }
 
-        @Override
-        public String toString() {
-            return new ToStringBuilder(this).append("from", from).append("to", to).append("type", type).toString();
+        override fun toString(): String {
+            return ToStringBuilder(this).append("from", from).append("to", `for`).append("type", type).toString()
         }
     }
 
-    private enum InvitationType {
-        TO_GUILD,
-        TO_ALLY
+    private enum class InvitationType {
+        TO_GUILD, TO_ALLY
     }
 }

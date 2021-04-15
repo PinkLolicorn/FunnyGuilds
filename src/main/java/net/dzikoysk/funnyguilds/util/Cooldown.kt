@@ -1,47 +1,37 @@
-package net.dzikoysk.funnyguilds.util;
+package net.dzikoysk.funnyguilds.util
 
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeUnit
 
-public final class Cooldown<T> {
+java.util.*import java.util.concurrent.TimeUnit
 
-    private final Map<T, Long> cooldowns = new WeakHashMap<>(32);
-
-    public boolean isOnCooldown(T key) {
-        Long cooldown = cooldowns.get(key);
-
-        if (cooldown == null) {
-            return false;
-        }
-        
+class Cooldown<T> {
+    private val cooldowns: MutableMap<T, Long> = WeakHashMap(32)
+    fun isOnCooldown(key: T): Boolean {
+        val cooldown = cooldowns[key] ?: return false
         if (cooldown > System.currentTimeMillis()) {
-            return true;
+            return true
         }
-        
-        cooldowns.remove(key);
-        return false;
+        cooldowns.remove(key)
+        return false
     }
 
-    public void putOnCooldown(T key, TimeUnit unit, long duration) {
-        this.cooldowns.put(key, System.currentTimeMillis() + unit.toMillis(duration));
+    fun putOnCooldown(key: T, unit: TimeUnit, duration: Long) {
+        cooldowns[key] = System.currentTimeMillis() + unit.toMillis(duration)
     }
 
-    public void putOnCooldown(T key, long cooldown) {
-        this.cooldowns.put(key, System.currentTimeMillis() + cooldown);
+    fun putOnCooldown(key: T, cooldown: Long) {
+        cooldowns[key] = System.currentTimeMillis() + cooldown
     }
 
-    public boolean cooldown(T key, TimeUnit unit, long duration) {
-        return this.cooldown(key, unit.toMillis(duration));
+    fun cooldown(key: T, unit: TimeUnit, duration: Long): Boolean {
+        return this.cooldown(key, unit.toMillis(duration))
     }
 
-    public boolean cooldown(T key, long cooldown) {
+    fun cooldown(key: T, cooldown: Long): Boolean {
         if (isOnCooldown(key)) {
-            return true;
+            return true
         }
-
-        this.putOnCooldown(key, cooldown);
-        return false;
+        this.putOnCooldown(key, cooldown)
+        return false
     }
-
 }

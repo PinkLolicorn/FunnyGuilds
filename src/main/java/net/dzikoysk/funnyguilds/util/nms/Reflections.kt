@@ -1,273 +1,219 @@
-package net.dzikoysk.funnyguilds.util.nms;
+package net.dzikoysk.funnyguilds.util.nms
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.util.commons.SafeUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
-import org.bukkit.entity.Entity;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils
+import org.bukkit.Bukkit
+import org.bukkit.World
+import org.bukkit.entity.Entity
+import java.lang.reflect.Constructor
+import java.lang.reflect.Field
+import java.lang.reflect.Method
+import java.util.*
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
-public final class Reflections {
-    
-    public static final String SERVER_VERSION = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-    public static final boolean USE_PRE_13_METHODS = Integer.parseInt(SERVER_VERSION.split("_")[1]) < 13;
-    public static final boolean USE_PRE_12_METHODS = Integer.parseInt(SERVER_VERSION.split("_")[1]) < 12;
-    public static final boolean USE_PRE_9_METHODS = Integer.parseInt(SERVER_VERSION.split("_")[1]) < 9;
-
-    private static final Map<String, Class<?>> CLASS_CACHE = new HashMap<>();
-    private static final Map<String, Field> FIELD_CACHE = new HashMap<>();
-    private static final Map<String, FieldAccessor<?>> FIELD_ACCESSOR_CACHE = new HashMap<>();
-    private static final Map<String, Method> METHOD_CACHE = new HashMap<>();
-    private static final Class<?> INVALID_CLASS = InvalidMarker.class;
-    private static final Method INVALID_METHOD = SafeUtils.safeInit(() -> InvalidMarker.class.getDeclaredMethod("invalidMethodMaker"));
-    private static final Field INVALID_FIELD = SafeUtils.safeInit(() -> InvalidMarker.class.getDeclaredField("invalidFieldMarker"));
-    private static final FieldAccessor<?> INVALID_FIELD_ACCESSOR = getField(INVALID_CLASS, Void.class, 0);
-
-    public static Class<?> getClassOmitCache(String className) {
-        CLASS_CACHE.remove(className);
-        return getClass(className);
+object Reflections {
+    val SERVER_VERSION = Bukkit.getServer().javaClass.getPackage().name.split("\\.".toRegex()).toTypedArray()[3]
+    val USE_PRE_13_METHODS = SERVER_VERSION.split("_".toRegex()).toTypedArray()[1].toInt() < 13
+    val USE_PRE_12_METHODS = SERVER_VERSION.split("_".toRegex()).toTypedArray()[1].toInt() < 12
+    val USE_PRE_9_METHODS = SERVER_VERSION.split("_".toRegex()).toTypedArray()[1].toInt() < 9
+    private val CLASS_CACHE: MutableMap<String, Class<*>?> = HashMap()
+    private val FIELD_CACHE: MutableMap<String, Field?> = HashMap()
+    private val FIELD_ACCESSOR_CACHE: MutableMap<String, FieldAccessor<*>> = HashMap()
+    private val METHOD_CACHE: MutableMap<String, Method> = HashMap()
+    private val INVALID_CLASS: Class<*> = InvalidMarker::class.java
+    private val INVALID_METHOD = SafeUtils.safeInit { InvalidMarker::class.java.getDeclaredMethod("invalidMethodMaker") }
+    private val INVALID_FIELD = SafeUtils.safeInit { InvalidMarker::class.java.getDeclaredField("invalidFieldMarker") }
+    private val INVALID_FIELD_ACCESSOR: FieldAccessor<*> = getField(INVALID_CLASS, Void::class.java, 0)
+    fun getClassOmitCache(className: String): Class<*>? {
+        CLASS_CACHE.remove(className)
+        return getClass(className)
     }
 
-    public static Class<?> getClass(String className) {
-        Class<?> c = CLASS_CACHE.get(className);
-
+    fun getClass(className: String): Class<*>? {
+        var c = CLASS_CACHE[className]
         if (c != null) {
-            return c != INVALID_CLASS ? c : null;
+            return if (c != INVALID_CLASS) c else null
         }
-
         try {
-            c = Class.forName(className);
-            CLASS_CACHE.put(className, c);
+            c = Class.forName(className)
+            CLASS_CACHE[className] = c
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not retrieve class", ex)
+            CLASS_CACHE[className] = INVALID_CLASS
         }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().error("Could not retrieve class", ex);
-            
-            CLASS_CACHE.put(className, INVALID_CLASS);
-        }
-        return c;
+        return c
     }
 
-    public static Class<?> getNMSClass(String name) {
-        return getClass("net.minecraft.server." + SERVER_VERSION + "." + name);
+    fun getNMSClass(name: String): Class<*>? {
+        return getClass("net.minecraft.server." + SERVER_VERSION + "." + name)
     }
 
-    public static Class<?> getCraftBukkitClass(String name) {
-        return getClass("org.bukkit.craftbukkit." + SERVER_VERSION + "." + name);
-    }
-    
-    public static Class<?> getBukkitClass(String name) {
-        return getClass("org.bukkit." + name);
+    fun getCraftBukkitClass(name: String): Class<*>? {
+        return getClass("org.bukkit.craftbukkit." + SERVER_VERSION + "." + name)
     }
 
-    public static Object getHandle(Entity entity) {
-        try {
-            return getMethod(entity.getClass(), "getHandle").invoke(entity);
-        }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().error("Could not get entity handle", ex);
-            
-            return null;
+    fun getBukkitClass(name: String): Class<*>? {
+        return getClass("org.bukkit.$name")
+    }
+
+    fun getHandle(entity: Entity): Any? {
+        return try {
+            getMethod(entity.javaClass, "getHandle")!!.invoke(entity)
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not get entity handle", ex)
+            null
         }
     }
 
-    public static Object getHandle(World world) {
-        try {
-            return getMethod(world.getClass(), "getHandle").invoke(world);
-        }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().error("Could not get world handle", ex);
-            
-            return null;
+    fun getHandle(world: World?): Any? {
+        return try {
+            getMethod(world!!.javaClass, "getHandle")!!.invoke(world)
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not get world handle", ex)
+            null
         }
     }
 
-    private static String constructFieldCacheKey(Class<?> cl, String fieldName) {
-        return cl.getName() + "." + fieldName;
+    private fun constructFieldCacheKey(cl: Class<*>?, fieldName: String): String {
+        return cl!!.name + "." + fieldName
     }
 
-    public static Field getField(Class<?> cl, String fieldName) {
-        String cacheKey = constructFieldCacheKey(cl, fieldName);
-
-        Field field = FIELD_CACHE.get(cacheKey);
-
+    fun getField(cl: Class<*>?, fieldName: String): Field? {
+        val cacheKey = constructFieldCacheKey(cl, fieldName)
+        var field = FIELD_CACHE[cacheKey]
         if (field != null) {
-            return field != INVALID_FIELD ? field : null;
+            return if (field !== INVALID_FIELD) field else null
         }
-
         try {
-            field = cl.getDeclaredField(fieldName);
-            FIELD_CACHE.put(cacheKey, field);
+            field = cl!!.getDeclaredField(fieldName)
+            FIELD_CACHE[cacheKey] = field
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not retrieve field", ex)
+            FIELD_CACHE[cacheKey] = INVALID_FIELD
         }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().error("Could not retrieve field", ex);
-            
-            FIELD_CACHE.put(cacheKey, INVALID_FIELD);
-        }
-
-        return field;
+        return field
     }
 
-    public static <T> FieldAccessor<T> getField(Class<?> target, Class<T> fieldType, int index) {
-        return getField(target, null, fieldType, index);
+    fun <T> getField(target: Class<*>?, fieldType: Class<T>, index: Int): FieldAccessor<T> {
+        return getField(target, null, fieldType, index)
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> FieldAccessor<T> getField(Class<?> target, String name, Class<T> fieldType, int index) {
-        final String cacheKey = target.getName() + "." + (name != null ? name : "NONE") + "." + fieldType.getName() + "." + index;
-
-        FieldAccessor<T> output = (FieldAccessor<T>) FIELD_ACCESSOR_CACHE.get(cacheKey);
-
+    private fun <T> getField(target: Class<*>?, name: String?, fieldType: Class<T>, index: Int): FieldAccessor<T> {
+        var index = index
+        val cacheKey = target!!.name + "." + (name ?: "NONE") + "." + fieldType.name + "." + index
+        var output = FIELD_ACCESSOR_CACHE[cacheKey] as FieldAccessor<T>?
         if (output != null) {
-            if (output == INVALID_FIELD_ACCESSOR) {
-                throw new IllegalArgumentException("Cannot find field with type " + fieldType);
-            }
-
-            return output;
+            require(!(output === INVALID_FIELD_ACCESSOR)) { "Cannot find field with type $fieldType" }
+            return output
         }
-
-        for (final Field field : target.getDeclaredFields()) {
-            if ((name == null || field.getName().equals(name)) && fieldType.isAssignableFrom(field.getType()) && index-- <= 0) {
-                field.setAccessible(true);
-
-                output = new FieldAccessor<T>() {
-                    
-                    @Override
-                    public T get(Object target) {
-                        try {
-                            return (T) field.get(target);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException("Cannot access reflection.", e);
+        for (field in target.declaredFields) {
+            if ((name == null || field.name == name) && fieldType.isAssignableFrom(field.type) && index-- <= 0) {
+                field.isAccessible = true
+                output = object : FieldAccessor<T> {
+                    override operator fun get(target: Any?): T {
+                        return try {
+                            field[target] as T
+                        } catch (e: IllegalAccessException) {
+                            throw RuntimeException("Cannot access reflection.", e)
                         }
                     }
 
-                    @Override
-                    public void set(Object target, Object value) {
+                    override operator fun set(target: Any?, value: Any?) {
                         try {
-                            field.set(target, value);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException("Cannot access reflection.", e);
+                            field[target] = value
+                        } catch (e: IllegalAccessException) {
+                            throw RuntimeException("Cannot access reflection.", e)
                         }
                     }
 
-                    @Override
-                    public boolean hasField(Object target) {
-                        return field.getDeclaringClass().isAssignableFrom(target.getClass());
+                    override fun hasField(target: Any): Boolean {
+                        return field.declaringClass.isAssignableFrom(target.javaClass)
                     }
-                };
-
-                break;
+                }
+                break
             }
         }
-
-        if (output == null && target.getSuperclass() != null) {
-            output = getField(target.getSuperclass(), name, fieldType, index);
+        if (output == null && target.superclass != null) {
+            output = getField(target.superclass, name, fieldType, index)
         }
-
-        FIELD_ACCESSOR_CACHE.put(cacheKey, output != null ? output : INVALID_FIELD_ACCESSOR);
-
-        if (output == null) {
-            throw new IllegalArgumentException("Cannot find field with type " + fieldType);
-        }
-
-        return output;
+        FIELD_ACCESSOR_CACHE[cacheKey] = output ?: INVALID_FIELD_ACCESSOR
+        requireNotNull(output) { "Cannot find field with type $fieldType" }
+        return output
     }
 
-    public static Field getPrivateField(Class<?> cl, String fieldName) {
-        String cacheKey = constructFieldCacheKey(cl, fieldName);
-        
-        Field c = FIELD_CACHE.get(cacheKey);
+    fun getPrivateField(cl: Class<*>?, fieldName: String): Field? {
+        val cacheKey = constructFieldCacheKey(cl, fieldName)
+        var c = FIELD_CACHE[cacheKey]
         if (c != null) {
-            return c != INVALID_FIELD ? c : null;
+            return if (c !== INVALID_FIELD) c else null
         }
-
         try {
-            c = cl.getDeclaredField(fieldName);
-            c.setAccessible(true);
-            FIELD_CACHE.put(cacheKey, c);
+            c = cl!!.getDeclaredField(fieldName)
+            c.isAccessible = true
+            FIELD_CACHE[cacheKey] = c
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not retrieve field", ex)
+            FIELD_CACHE[cacheKey] = INVALID_FIELD
         }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().error("Could not retrieve field", ex);
-            
-            FIELD_CACHE.put(cacheKey, INVALID_FIELD);
-        }
-
-        return c;
+        return c
     }
 
-    public static Method getMethod(Class<?> cl, String method, Class<?>... args) {
-        String cacheKey = cl.getName() + "." + method + "." + (args == null ? "NONE" : Arrays.toString(args));
-
-        Method output = METHOD_CACHE.get(cacheKey);
+    fun getMethod(cl: Class<*>?, method: String, vararg args: Class<*>): Method? {
+        val cacheKey = cl!!.name + "." + method + "." + if (args == null) "NONE" else Arrays.toString(args)
+        var output = METHOD_CACHE[cacheKey]
         if (output != null) {
-            return output != INVALID_METHOD ? output : null;
+            return if (output !== INVALID_METHOD) output else null
         }
-
-        for (Method m : cl.getMethods()) {
-            if (m.getName().equals(method) && (args == null || classListEqual(args, m.getParameterTypes()))) {
-                output = m;
-                break;
+        for (m in cl.methods) {
+            if (m.name == method && (args == null || classListEqual(args, m.parameterTypes))) {
+                output = m
+                break
             }
         }
-
-        METHOD_CACHE.put(cacheKey, output == null ? INVALID_METHOD : output);
-        return output;
+        METHOD_CACHE[cacheKey] = output ?: INVALID_METHOD
+        return output
     }
 
-    public static Method getMethod(Class<?> cl, String method) {
-        return getMethod(cl, method, null);
+    fun getMethod(cl: Class<*>?, method: String): Method? {
+        return getMethod(cl, method, null)
     }
 
-    public static Constructor<?> getConstructor(Class<?> clazz, Class<?>... arguments) {
-        for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-            if (Arrays.equals(constructor.getParameterTypes(), arguments)) {
-                return constructor;
+    fun getConstructor(clazz: Class<*>?, vararg arguments: Class<*>?): Constructor<*>? {
+        for (constructor in clazz!!.declaredConstructors) {
+            if (Arrays.equals(constructor.parameterTypes, arguments)) {
+                return constructor
             }
         }
-
-        return null;
+        return null
     }
 
-    public static boolean classListEqual(Class<?>[] l1, Class<?>[] l2) {
-        if (l1.length != l2.length) {
-            return false;
+    fun classListEqual(l1: Array<Class<*>>, l2: Array<Class<*>>): Boolean {
+        if (l1.size != l2.size) {
+            return false
         }
-
-        for (int i = 0; i < l1.length; i++) {
+        for (i in l1.indices) {
             if (l1[i] != l2[i]) {
-                return false;
+                return false
             }
         }
-
-        return true;
+        return true
     }
 
-    public interface ConstructorInvoker {
-        Object invoke(Object... arguments);
+    interface ConstructorInvoker {
+        operator fun invoke(vararg arguments: Any?): Any?
     }
 
-    public interface MethodInvoker {
-        Object invoke(Object target, Object... arguments);
+    interface MethodInvoker {
+        operator fun invoke(target: Any?, vararg arguments: Any?): Any?
     }
 
-    public interface FieldAccessor<T> {
-        T get(Object target);
-
-        void set(Object target, Object value);
-
-        boolean hasField(Object target);
+    interface FieldAccessor<T> {
+        operator fun get(target: Any?): T
+        operator fun set(target: Any?, value: Any?)
+        fun hasField(target: Any): Boolean
     }
 
-    private static class InvalidMarker {
-        public Void invalidFieldMarker;
-        public void invalidMethodMaker() {}
+    private class InvalidMarker {
+        var invalidFieldMarker: Void? = null
+        fun invalidMethodMaker() {}
     }
-
-    private Reflections() {}
-
 }

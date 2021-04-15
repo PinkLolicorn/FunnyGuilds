@@ -1,77 +1,56 @@
-package net.dzikoysk.funnyguilds.hook;
+package net.dzikoysk.funnyguilds.hook
 
-import me.clip.placeholderapi.PlaceholderAPI;
-import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.rank.RankUtils;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables;
-import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariable;
-import org.bukkit.entity.Player;
+import me.clip.placeholderapi.PlaceholderAPI
+import me.clip.placeholderapi.expansion.PlaceholderExpansion
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.rank.RankUtils
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables
+import org.bukkit.entity.Player
+import java.util.regex.Pattern
 
-import java.util.regex.Pattern;
-
-public final class PlaceholderAPIHook {
-
-    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("[%]([^%]+)[%]");
-    private static final String FUNNYGUILDS_VERSION = FunnyGuilds.getInstance().getDescription().getVersion();
-
-    public static void initPlaceholderHook() {
-        new FunnyGuildsPlaceholder().register();
-        FunnyGuilds.getPluginLogger().info("PlaceholderAPI hook has been enabled!");
+object PlaceholderAPIHook {
+    private val PLACEHOLDER_PATTERN = Pattern.compile("[%]([^%]+)[%]")
+    private val FUNNYGUILDS_VERSION: String = FunnyGuilds.Companion.getInstance().getDescription().getVersion()
+    fun initPlaceholderHook() {
+        FunnyGuildsPlaceholder().register()
+        FunnyGuilds.Companion.getPluginLogger().info("PlaceholderAPI hook has been enabled!")
     }
 
-    public static String replacePlaceholders(Player user, String base) {
-        return PlaceholderAPI.setPlaceholders(user, base, PLACEHOLDER_PATTERN);
+    fun replacePlaceholders(user: Player?, base: String?): String {
+        return PlaceholderAPI.setPlaceholders(user, base, PLACEHOLDER_PATTERN)
     }
 
-    private PlaceholderAPIHook() {}
-
-    private static class FunnyGuildsPlaceholder extends PlaceholderExpansion {
-
-        @Override
-        public String onPlaceholderRequest(Player player, String identifier) {
+    private class FunnyGuildsPlaceholder : PlaceholderExpansion() {
+        override fun onPlaceholderRequest(player: Player, identifier: String): String {
             if (player == null) {
-                return "";
+                return ""
             }
-
-            User user = User.get(player);
-            if (user == null) {
-                return "";
-            }
-
-            TablistVariable variable = DefaultTablistVariables.getFunnyVariables().get(identifier.toLowerCase());
-            if (variable != null) {
-                return variable.get(user);
-            }
-
-            return RankUtils.parseRank(user, "{" + identifier.toUpperCase() + "}");
+            val user: User = User.Companion.get(player) ?: return ""
+            val variable = DefaultTablistVariables.getFunnyVariables()[identifier.toLowerCase()]
+            return if (variable != null) {
+                variable[user]
+            } else RankUtils.parseRank(user, "{" + identifier.toUpperCase() + "}")!!
         }
 
-        @Override
-        public String getAuthor() {
-            return "FunnyGuilds Team";
+        override fun getAuthor(): String {
+            return "FunnyGuilds Team"
         }
 
-        @Override
-        public String getIdentifier() {
-            return "funnyguilds";
+        override fun getIdentifier(): String {
+            return "funnyguilds"
         }
 
-        @Override
-        public String getPlugin() {
-            return "FunnyGuilds";
+        override fun getPlugin(): String {
+            return "FunnyGuilds"
         }
 
-        @Override
-        public String getVersion() {
-            return FUNNYGUILDS_VERSION;
+        override fun getVersion(): String {
+            return FUNNYGUILDS_VERSION
         }
 
-        @Override
-        public boolean persist() {
-            return true;
+        override fun persist(): Boolean {
+            return true
         }
     }
-
 }

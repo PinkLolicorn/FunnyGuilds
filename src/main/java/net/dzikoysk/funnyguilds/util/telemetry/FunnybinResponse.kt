@@ -1,72 +1,41 @@
-package net.dzikoysk.funnyguilds.util.telemetry;
+package net.dzikoysk.funnyguilds.util.telemetry
 
-import java.util.Objects;
+import java.util.*
 
-public class FunnybinResponse {
+class FunnybinResponse {
+    var fullUrl: String? = null
+    var shortUrl: String? = null
+    var uuid: String? = null
 
-    private String fullUrl;
-    private String shortUrl;
-    private String uuid;
-
-    public FunnybinResponse() {
+    constructor() {}
+    constructor(fullUrl: String?, shortUrl: String?, uuid: String?) {
+        this.fullUrl = fullUrl
+        this.shortUrl = shortUrl
+        this.uuid = uuid
     }
 
-    public FunnybinResponse(String fullUrl, String shortUrl, String uuid) {
-        this.fullUrl = fullUrl;
-        this.shortUrl = shortUrl;
-        this.uuid = uuid;
-    }
-
-    public String getFullUrl() {
-        return this.fullUrl;
-    }
-
-    public void setFullUrl(String fullUrl) {
-        this.fullUrl = fullUrl;
-    }
-
-    public String getShortUrl() {
-        return this.shortUrl;
-    }
-
-    public void setShortUrl(String shortUrl) {
-        this.shortUrl = shortUrl;
-    }
-
-    public String getUuid() {
-        return this.uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    override fun equals(o: Any?): Boolean {
+        if (this === o) {
+            return true
         }
-        if (o == null || this.getClass() != o.getClass()) {
-            return false;
+        if (o == null || this.javaClass != o.javaClass) {
+            return false
         }
-        FunnybinResponse that = (FunnybinResponse) o;
-        return Objects.equals(this.fullUrl, that.fullUrl) &&
-               Objects.equals(this.shortUrl, that.shortUrl) &&
-               Objects.equals(this.uuid, that.uuid);
+        val that = o as FunnybinResponse
+        return fullUrl == that.fullUrl &&
+                shortUrl == that.shortUrl &&
+                uuid == that.uuid
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.fullUrl, this.shortUrl, this.uuid);
+    override fun hashCode(): Int {
+        return Objects.hash(fullUrl, shortUrl, uuid)
     }
 
-
-    @Override
-    public String toString() {
+    override fun toString(): String {
         return "FunnybinResponse{" +
-               "fullUrl='" + this.fullUrl + '\'' +
-               ", shortUrl='" + this.shortUrl + '\'' +
-               ", uuid='" + this.uuid + '\'' +
-               '}';
+                "fullUrl='" + fullUrl + '\'' +
+                ", shortUrl='" + shortUrl + '\'' +
+                ", uuid='" + uuid + '\'' +
+                '}'
     }
 }

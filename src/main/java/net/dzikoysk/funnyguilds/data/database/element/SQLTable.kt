@@ -1,94 +1,68 @@
-package net.dzikoysk.funnyguilds.data.database.element;
+package net.dzikoysk.funnyguilds.data.database.element
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-public class SQLTable {
-
-    private final ArrayList<SQLElement> sqlElements = new ArrayList<>();
-    private final String name;
-    private int idPrimaryKey = 0;
-
-    public SQLTable(String name) {
-        this.name = name;
+class SQLTable(val name: String) {
+    val sqlElements = ArrayList<SQLElement?>()
+    private var idPrimaryKey = 0
+    fun add(key: String?, type: SQLType?) {
+        sqlElements.add(SQLElement(key, type, -1, false))
     }
 
-    public void add(String key, SQLType type) {
-        sqlElements.add(new SQLElement(key, type, -1, false));
+    fun add(key: String?, type: SQLType?, size: Int) {
+        sqlElements.add(SQLElement(key, type, size, false))
     }
 
-    public void add(String key, SQLType type, int size) {
-        sqlElements.add(new SQLElement(key, type, size, false));
+    fun add(key: String?, type: SQLType?, notNull: Boolean) {
+        sqlElements.add(SQLElement(key, type, -1, notNull))
     }
 
-    public void add(String key, SQLType type, boolean notNull) {
-        sqlElements.add(new SQLElement(key, type, -1, notNull));
+    fun add(key: String?, type: SQLType?, size: Int, notNull: Boolean) {
+        sqlElements.add(SQLElement(key, type, size, notNull))
     }
 
-    public void add(String key, SQLType type, int size, boolean notNull) {
-        sqlElements.add(new SQLElement(key, type, size, notNull));
-    }
-
-    public void setPrimaryKey(String key) {
-        for (int i = 0; i < sqlElements.size(); i++) {
-            if (sqlElements.get(i).getKey().equalsIgnoreCase(key)) {
-                this.setPrimaryKey(i);
-                return;
+    fun setPrimaryKey(key: String?) {
+        for (i in sqlElements.indices) {
+            if (sqlElements[i]!!.key.equals(key, ignoreCase = true)) {
+                this.setPrimaryKey(i)
+                return
             }
         }
-
-        this.setPrimaryKey(0);
+        this.setPrimaryKey(0)
     }
 
-    public void setPrimaryKey(int idPrimaryKey) {
-        this.idPrimaryKey = idPrimaryKey;
+    fun setPrimaryKey(idPrimaryKey: Int) {
+        this.idPrimaryKey = idPrimaryKey
     }
 
-    public SQLElement getPrimaryKey() {
-        return sqlElements.get(idPrimaryKey);
-    }
+    val primaryKey: SQLElement?
+        get() = sqlElements[idPrimaryKey]
+    val nameGraveAccent: String
+        get() = "`$name`"
 
-    public String getName() {
-        return name;
-    }
-
-    public String getNameGraveAccent() {
-        return "`" + name + "`";
-    }
-
-    public ArrayList<SQLElement> getSqlElements() {
-        return sqlElements;
-    }
-
-    public int getIndexElement(String key) {
-        for (int index = 0; index < sqlElements.size(); index++) {
-            if (!sqlElements.get(index).getKey().equalsIgnoreCase(key)) {
-                continue;
+    fun getIndexElement(key: String?): Int {
+        for (index in sqlElements.indices) {
+            if (!sqlElements[index]!!.key.equals(key, ignoreCase = true)) {
+                continue
             }
-
-            return index;
+            return index
         }
-
-        return -1;
+        return -1
     }
 
-    public SQLElement getSQLElement(String key) {
-        for (SQLElement element : sqlElements) {
-            if (element.getKey().equalsIgnoreCase(key)) {
-                return element;
+    fun getSQLElement(key: String?): SQLElement? {
+        for (element in sqlElements) {
+            if (element!!.key.equals(key, ignoreCase = true)) {
+                return element
             }
         }
-
-        return null;
+        return null
     }
 
-    public HashMap<String, Integer> getMapElementsKey() {
-        HashMap<String, Integer> elementsMap = new HashMap<>();
-
-        for (int i = 1; i < sqlElements.size() + 1; i++) {
-            elementsMap.put(sqlElements.get(i - 1).getKey(), i);
+    val mapElementsKey: HashMap<String, Int>
+        get() {
+            val elementsMap = HashMap<String, Int>()
+            for (i in 1 until sqlElements.size + 1) {
+                elementsMap[sqlElements[i - 1]!!.key] = i
+            }
+            return elementsMap
         }
-
-        return elementsMap;
-    }
 }

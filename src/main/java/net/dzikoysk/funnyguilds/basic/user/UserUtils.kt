@@ -1,140 +1,115 @@
-package net.dzikoysk.funnyguilds.basic.user;
+package net.dzikoysk.funnyguilds.basic.user
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import org.apache.commons.lang3.Validate;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import org.apache.commons.lang3.Validate
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.regex.Pattern
+import java.util.stream.Collectors
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+object UserUtils {
+    private val USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9_]{3,16}$")
+    private val BY_UUID_USER_COLLECTION: MutableMap<UUID?, User> = ConcurrentHashMap()
+    private val BY_NAME_USER_COLLECTION: MutableMap<String?, User> = ConcurrentHashMap()
+    val users: Set<User>
+        get() = HashSet(BY_UUID_USER_COLLECTION.values)
 
-public class UserUtils {
-
-    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9_]{3,16}$");
-
-    private final static Map<UUID, User> BY_UUID_USER_COLLECTION = new ConcurrentHashMap<>();
-    private final static Map<String, User> BY_NAME_USER_COLLECTION = new ConcurrentHashMap<>();
-
-    public static Set<User> getUsers() {
-        return new HashSet<>(BY_UUID_USER_COLLECTION.values());
-    }
-
-    public static User get(String nickname) {
-        return get(nickname, false);
-    }
-
-    public static User get(String nickname, boolean ignoreCase) {
-        if (ignoreCase) {
-            for (Map.Entry<String, User> entry : BY_NAME_USER_COLLECTION.entrySet()) {
-                if (entry.getKey().equalsIgnoreCase(nickname)) {
-                    return entry.getValue();
+    @JvmOverloads
+    operator fun get(nickname: String?, ignoreCase: Boolean = false): User? {
+        return if (ignoreCase) {
+            for ((key, value) in BY_NAME_USER_COLLECTION) {
+                if (key.equals(nickname, ignoreCase = true)) {
+                    return value
                 }
             }
-
-            return null;
-        }
-        else {
-            return BY_NAME_USER_COLLECTION.get(nickname);
+            null
+        } else {
+            BY_NAME_USER_COLLECTION[nickname]
         }
     }
 
-    public static User get(UUID uuid) {
-        return BY_UUID_USER_COLLECTION.get(uuid);
+    operator fun get(uuid: UUID?): User? {
+        return BY_UUID_USER_COLLECTION[uuid]
     }
 
-    public static void addUser(User user) {
-        Validate.notNull(user, "user can't be null!");
-
-        BY_UUID_USER_COLLECTION.put(user.getUUID(), user);
-        BY_NAME_USER_COLLECTION.put(user.getName(), user);
+    fun addUser(user: User) {
+        Validate.notNull(user, "user can't be null!")
+        BY_UUID_USER_COLLECTION[user.uuid] = user
+        BY_NAME_USER_COLLECTION[user.name] = user
     }
 
-    public static void removeUser(User user) {
-        Validate.notNull(user, "user can't be null!");
-
-        BY_UUID_USER_COLLECTION.remove(user.getUUID());
-        BY_NAME_USER_COLLECTION.remove(user.getName());
+    fun removeUser(user: User) {
+        Validate.notNull(user, "user can't be null!")
+        BY_UUID_USER_COLLECTION.remove(user.uuid)
+        BY_NAME_USER_COLLECTION.remove(user.name)
     }
 
-    public static void updateUsername(User user, String newUsername) {
-        Validate.notNull(user, "user can't be null!");
-
-        BY_NAME_USER_COLLECTION.remove(user.getName());
-        BY_NAME_USER_COLLECTION.put(newUsername, user);
-
-        user.setName(newUsername);
+    fun updateUsername(user: User, newUsername: String) {
+        Validate.notNull(user, "user can't be null!")
+        BY_NAME_USER_COLLECTION.remove(user.name)
+        BY_NAME_USER_COLLECTION[newUsername] = user
+        user.name = newUsername
     }
 
-    public static boolean playedBefore(String nickname) {
-        return playedBefore(nickname, false);
-    }
-
-    public static boolean playedBefore(String nickname, boolean ignoreCase) {
-        if (ignoreCase) {
+    @JvmOverloads
+    fun playedBefore(nickname: String?, ignoreCase: Boolean = false): Boolean {
+        return if (ignoreCase) {
             if (nickname != null) {
-                for (String userNickname : BY_NAME_USER_COLLECTION.keySet()) {
-                    if (userNickname.equalsIgnoreCase(nickname)) {
-                        return true;
+                for (userNickname in BY_NAME_USER_COLLECTION.keys) {
+                    if (userNickname.equals(nickname, ignoreCase = true)) {
+                        return true
                     }
                 }
             }
-
-            return false;
-        }
-        else {
-            return nickname != null && BY_NAME_USER_COLLECTION.containsKey(nickname);
+            false
+        } else {
+            nickname != null && BY_NAME_USER_COLLECTION.containsKey(nickname)
         }
     }
 
-    public static Set<String> getNames(Collection<User> users) {
-        return users.stream().map(User::getName).collect(Collectors.toSet());
+    fun getNames(users: Collection<User?>?): Set<String?> {
+        return users!!.stream().map { obj: User? -> obj!!.name }.collect(Collectors.toSet())
     }
 
-    public static Set<User> getUsers(Collection<String> names) {
-        Set<User> users = new HashSet<>();
-
-        for (String name : names) {
-            User user = User.get(name);
-
+    fun getUsers(names: Collection<String?>?): Set<User> {
+        val users: MutableSet<User> = HashSet()
+        for (name in names!!) {
+            val user: User = User.Companion.get(name)
             if (user == null) {
-                FunnyGuilds.getPluginLogger().warning("Corrupted user: " + name);
-                continue;
+                FunnyGuilds.Companion.getPluginLogger().warning("Corrupted user: $name")
+                continue
             }
-
-            users.add(user);
+            users.add(user)
         }
-        return users;
+        return users
     }
 
-    public static Set<String> getOnlineNames(Collection<User> users) {
-        Set<String> set = new HashSet<>();
-
-        for (User user : users) {
-            set.add(user.isOnline() ? "<online>" + user.getName() + "</online>" : user.getName());
+    fun getOnlineNames(users: Collection<User?>?): Set<String> {
+        val set: MutableSet<String> = HashSet()
+        for (user in users!!) {
+            set.add((if (user!!.isOnline) "<online>" + user.name + "</online>" else user.name)!!)
         }
-
-        return set;
+        return set
     }
 
-    public static void removeGuild(Collection<User> users) {
-        for (User user : users) {
-            user.removeGuild();
+    fun removeGuild(users: Collection<User?>?) {
+        for (user in users!!) {
+            user!!.removeGuild()
         }
     }
 
-    public static void setGuild(Collection<User> users, Guild guild) {
-        for (User user : users) {
-            user.setGuild(guild);
+    fun setGuild(users: Collection<User?>, guild: Guild?) {
+        for (user in users) {
+            user!!.guild = guild
         }
     }
 
-    public static int usersSize() {
-        return BY_UUID_USER_COLLECTION.size();
+    fun usersSize(): Int {
+        return BY_UUID_USER_COLLECTION.size
     }
 
-    public static boolean validateUsername(String name) {
-        return USERNAME_PATTERN.matcher(name).matches();
+    fun validateUsername(name: String?): Boolean {
+        return USERNAME_PATTERN.matcher(name).matches()
     }
-
 }

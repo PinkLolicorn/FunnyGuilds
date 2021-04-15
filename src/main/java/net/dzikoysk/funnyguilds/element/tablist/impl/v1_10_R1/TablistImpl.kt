@@ -1,154 +1,522 @@
-package net.dzikoysk.funnyguilds.element.tablist.impl.v1_10_R1;
+package net.dzikoysk.funnyguilds.element.tablist.impl.v1_10_R1import
 
-import com.google.common.collect.Lists;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist;
-import net.dzikoysk.funnyguilds.util.commons.ChatUtils;
-import net.dzikoysk.funnyguilds.util.nms.Reflections;
+import com.google.common.collect.Lists
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist
+import net.dzikoysk.funnyguilds.element.tablist.impl.v1_10_R1.TablistImpl
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import java.lang.reflect.Constructor
+import java.lang.reflect.Field
+import java.lang.reflect.InvocationTargetException
+import java.util.*
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+net.dzikoysk.funnyguilds.data .flat.FlatDataModel
+import net.dzikoysk.funnyguilds.util.YamlWrapper
+import net.dzikoysk.funnyguilds.data.util.DeserializationUtils
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import net.dzikoysk.funnyguilds.basic.guild.RegionUtils
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.data.flat.FlatGuild
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import net.dzikoysk.funnyguilds.data.flat.FlatUser
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseFixAlliesRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdateRequest
+import net.dzikoysk.funnyguilds.data.flat.FlatPatcher
+import net.dzikoysk.funnyguilds.data.util.InvitationList.Invitation
+import net.dzikoysk.funnyguilds.data.util.InvitationList
+import com.google.common.collect.ImmutableList
+import java.util.stream.Collectors
+import net.dzikoysk.funnyguilds.data.util.InvitationList.InvitationType
+import net.dzikoysk.funnyguilds.data.util.ConfirmationList
+import net.dzikoysk.funnyguilds.basic.user.UserBan
+import org.diorite.cfg.annotations.CfgClass
+import org.diorite.cfg.annotations.defaults.CfgDelegateDefault
+import org.diorite.cfg.annotations.CfgComment
+import org.diorite.cfg.annotations.CfgExclude
+import net.dzikoysk.funnyguilds.util.Cooldown
+import java.text.SimpleDateFormat
+import org.diorite.cfg.annotations.CfgName
+import org.diorite.cfg.annotations.CfgStringStyle
+import org.diorite.cfg.annotations.CfgStringStyle.StringStyle
+import net.dzikoysk.funnyguilds.basic.guild.GuildRegex
+import org.diorite.cfg.annotations.CfgCollectionStyle
+import org.diorite.cfg.annotations.CfgCollectionStyle.CollectionStyle
+import java.time.LocalTime
+import com.google.common.collect.ImmutableMap
+import net.dzikoysk.funnyguilds.basic.rank.RankSystem
+import net.dzikoysk.funnyguilds.util.IntegerRange
+import net.dzikoysk.funnyguilds.element.notification.NotificationStyle
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarOptions
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.MySQL
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemUtils
+import net.dzikoysk.funnyguilds.basic.rank.RankUtils
+import java.lang.IndexOutOfBoundsException
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemBuilder
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MaterialUtils
+import kotlin.collections.MutableMap.MutableEntry
+import java.lang.NumberFormatException
+import java.util.EnumMap
+import java.time.format.DateTimeFormatter
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.Commands.AdminCommands
+import kotlin.jvm.JvmOverloads
+import net.dzikoysk.funnyguilds.data.database.element.SQLElement
+import net.dzikoysk.funnyguilds.data.database.element.SQLTable
+import net.dzikoysk.funnyguilds.data.database.element.SQLNamedStatement
+import net.dzikoysk.funnyguilds.data.database.Database
+import java.sql.PreparedStatement
+import java.sql.SQLException
+import java.sql.ResultSet
+import kotlin.Throws
+import com.zaxxer.hikari.HikariDataSource
+import net.dzikoysk.funnyguilds.data.database.element.SQLBasicUtils
+import net.dzikoysk.funnyguilds.data.database.SQLDataModel
+import net.dzikoysk.funnyguilds.data.database.DatabaseUser
+import net.dzikoysk.funnyguilds.data.database.DatabaseRegion
+import net.dzikoysk.funnyguilds.data.database.DatabaseGuild
+import kotlin.jvm.Volatile
+import java.lang.Runnable
+import net.dzikoysk.funnyguilds.concurrency.requests.DataSaveRequest
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEditHook
+import com.sk89q.worldedit.bukkit.BukkitWorld
+import com.sk89q.jnbt.NBTInputStream
+import java.util.zip.GZIPInputStream
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.session.PasteBuilder
+import com.sk89q.worldedit.function.operation.Operations
+import java.lang.InstantiationException
+import java.lang.RuntimeException
+import java.lang.IllegalAccessException
+import java.lang.reflect.InvocationTargetException
+import com.sk89q.worldedit.MaxChangedBlocksException
+import java.io.IOException
+import com.sk89q.worldedit.extent.Extent
+import java.lang.NoSuchMethodException
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.WorldEditException
+import com.sk89q.worldguard.protection.ApplicableRegionSet
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuardHook
+import java.lang.invoke.MethodHandles
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard6Hook
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin
+import com.sk89q.worldguard.protection.managers.RegionManager
+import com.sk89q.worldguard.protection.flags.StateFlag
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException
+import java.lang.IllegalArgumentException
+import com.sk89q.worldguard.protection.regions.ProtectedRegion
+import com.sk89q.worldguard.WorldGuard
+import net.milkbowl.vault.economy.Economy
+import net.dzikoysk.funnyguilds.hook.VaultHook
+import net.milkbowl.vault.economy.EconomyResponse
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard7Hook
+import java.lang.ClassNotFoundException
+import net.dzikoysk.funnyguilds.hook.FunnyTabHook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit6Hook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit7Hook
+import net.dzikoysk.funnyguilds.hook.BungeeTabListPlusHook
+import net.dzikoysk.funnyguilds.hook.MVdWPlaceholderAPIHook
+import net.dzikoysk.funnyguilds.hook.PlaceholderAPIHook
+import net.dzikoysk.funnyguilds.hook.LeaderHeadsHook
+import net.dzikoysk.funnyguilds.FunnyGuildsLogger
+import net.dzikoysk.funnyguilds.hook.LeaderHeadsHook.TopRankCollector
+import me.robin.leaderheads.datacollectors.DataCollector
+import me.robin.leaderheads.objects.BoardType
+import net.dzikoysk.funnyguilds.basic.rank.RankManager
+import net.dzikoysk.funnyguilds.hook.PlaceholderAPIHook.FunnyGuildsPlaceholder
+import me.clip.placeholderapi.expansion.PlaceholderExpansion
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables
+import codecrafter47.bungeetablistplus.api.bukkit.BungeeTabListPlusBukkitAPI
+import be.maximvdw.placeholderapi.PlaceholderReplaceEvent
+import net.dzikoysk.funnyguilds.util.nms.Reflections.InvalidMarker
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils.SafeInitializer
+import java.lang.Void
+import net.dzikoysk.funnyguilds.util.nms.PacketSender
+import net.dzikoysk.funnyguilds.util.nms.PacketCreator
+import java.lang.ThreadLocal
+import net.dzikoysk.funnyguilds.util.nms.EggTypeChanger
+import java.lang.SecurityException
+import net.dzikoysk.funnyguilds.util.nms.PacketExtension
+import io.netty.channel.ChannelHandler
+import io.netty.channel.ChannelDuplexHandler
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelPromise
+import net.dzikoysk.funnyguilds.concurrency.requests.WarUseRequest
+import io.netty.channel.ChannelPipeline
+import net.dzikoysk.funnyguilds.util.nms.BlockDataChanger
+import net.dzikoysk.funnyguilds.util.nms.GuildEntityHelper
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.util.commons.spigot.ItemComponentUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.NotePitch
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PingUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.SpaceUtils
+import org.panda_lang.utilities.commons.function.QuadFunction
+import java.text.DecimalFormat
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MinecraftServerUtils
+import java.lang.NoSuchFieldException
+import net.md_5.bungee.api.chat.BaseComponent
+import java.io.FileNotFoundException
+import java.io.ByteArrayOutputStream
+import java.io.Closeable
+import java.util.Collections
+import java.util.function.BinaryOperator
+import net.dzikoysk.funnyguilds.util.commons.MapUtil
+import java.util.Locale
+import org.diorite.cfg.system.TemplateCreator
+import org.apache.logging.log4j.core.Appender
+import org.apache.logging.log4j.core.appender.AbstractOutputStreamAppender
+import net.dzikoysk.funnyguilds.util.metrics.BStats
+import net.dzikoysk.funnyguilds.util.metrics.BStats.Country
+import java.io.DataOutputStream
+import net.dzikoysk.funnyguilds.util.metrics.MCStats
+import java.io.BufferedReader
+import java.io.UnsupportedEncodingException
+import java.net.URLEncoder
+import net.dzikoysk.funnyguilds.util.telemetry.FunnyTelemetry
+import net.dzikoysk.funnyguilds.util.telemetry.PasteType
+import net.dzikoysk.funnyguilds.util.telemetry.FunnybinResponse
+import org.diorite.utils.network.DioriteURLUtils
+import net.dzikoysk.funnyguilds.util.FunnyBox
+import net.dzikoysk.funnyguilds.basic.rank.Rank
+import java.util.NavigableSet
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PermissionUtils
+import com.google.common.collect.Iterables
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.user.UserCache
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarProvider
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateUserRequest
+import com.google.common.cache.CacheBuilder
+import net.dzikoysk.funnyguilds.element.IndividualPrefix
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemoveGuildRequest
+import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause
+import net.dzikoysk.funnyguilds.event.FunnyEvent
+import net.dzikoysk.funnyguilds.event.rank.RankEvent
+import net.dzikoysk.funnyguilds.event.rank.RankChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.KillsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.DeathsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.PointsChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildBreakAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildSendAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAcceptAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildRevokeAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberJoinEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberKickEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberDeputyEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaderEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberAcceptInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberRevokeInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildMoveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildUnbanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildDeleteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEnlargeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreCreateEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBaseChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildLivesChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionEnterEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEntityExplodeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildExtendValidityEvent
+import net.dzikoysk.funnyguilds.system.ban.BanUtils
+import net.dzikoysk.funnyguilds.system.war.WarUtils
+import net.dzikoysk.funnyguilds.event.SimpleEventHandler
+import net.dzikoysk.funnyguilds.system.war.WarSystem
+import net.dzikoysk.funnyguilds.command.user.InfoCommand
+import net.dzikoysk.funnyguilds.system.war.WarListener
+import net.dzikoysk.funnyguilds.system.security.SecuritySystem
+import net.dzikoysk.funnycommands.resources.ValidationException
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityReach
+import net.dzikoysk.funnyguilds.system.security.SecurityUtils
+import net.dzikoysk.funnyguilds.system.security.SecurityType
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityFreeCam
+import net.dzikoysk.funnyguilds.system.protection.ProtectionSystem
+import net.dzikoysk.funnyguilds.system.validity.ValidityUtils
+import net.dzikoysk.funnycommands.stereotypes.FunnyComponent
+import net.dzikoysk.funnyguilds.command.CanManage
+import net.dzikoysk.funnyguilds.command.DefaultValidation
+import net.dzikoysk.funnyguilds.command.GuildValidation
+import net.dzikoysk.funnyguilds.command.IsOwner
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTaskBuilder
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTask
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.IsMember
+import java.util.concurrent.atomic.AtomicInteger
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddPlayerRequest
+import net.dzikoysk.funnyguilds.command.UserValidation
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemovePlayerRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdatePlayer
+import net.dzikoysk.funnyguilds.element.gui.GuiWindow
+import net.dzikoysk.funnyguilds.element.gui.GuiItem
+import net.dzikoysk.funnyguilds.command.user.CreateCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.user.DeleteCommand
+import net.dzikoysk.funnyguilds.command.user.ConfirmCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.ReloadRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.FunnybinRequest
+import net.dzikoysk.funnyguilds.command.admin.AdminUtils
+import net.dzikoysk.funnyguilds.command.admin.ProtectionCommand
+import java.lang.IllegalStateException
+import net.dzikoysk.funnyguilds.command.GuildBind
+import net.dzikoysk.funnyguilds.command.UserBind
+import net.dzikoysk.funnyguilds.command.OwnerValidator
+import net.dzikoysk.funnyguilds.command.MemberValidator
+import net.dzikoysk.funnyguilds.command.ManageValidator
+import net.dzikoysk.funnycommands.FunnyCommands
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration.CommandComponents
+import net.dzikoysk.funnyguilds.command.user.AllyCommand
+import net.dzikoysk.funnyguilds.command.user.BaseCommand
+import net.dzikoysk.funnyguilds.command.user.BreakCommand
+import net.dzikoysk.funnyguilds.command.user.DeputyCommand
+import net.dzikoysk.funnyguilds.command.user.EnlargeCommand
+import net.dzikoysk.funnyguilds.command.user.EscapeCommand
+import net.dzikoysk.funnyguilds.command.user.FunnyGuildsCommand
+import net.dzikoysk.funnyguilds.command.user.GuildCommand
+import net.dzikoysk.funnyguilds.command.user.InviteCommand
+import net.dzikoysk.funnyguilds.command.user.ItemsCommand
+import net.dzikoysk.funnyguilds.command.user.JoinCommand
+import net.dzikoysk.funnyguilds.command.user.KickCommand
+import net.dzikoysk.funnyguilds.command.user.LeaderCommand
+import net.dzikoysk.funnyguilds.command.user.LeaveCommand
+import net.dzikoysk.funnyguilds.command.user.PlayerInfoCommand
+import net.dzikoysk.funnyguilds.command.user.PvPCommand
+import net.dzikoysk.funnyguilds.command.user.RankingCommand
+import net.dzikoysk.funnyguilds.command.user.RankResetCommand
+import net.dzikoysk.funnyguilds.command.user.SetBaseCommand
+import net.dzikoysk.funnyguilds.command.user.TopCommand
+import net.dzikoysk.funnyguilds.command.user.ValidityCommand
+import net.dzikoysk.funnyguilds.command.user.WarCommand
+import net.dzikoysk.funnyguilds.command.user.TntCommand
+import net.dzikoysk.funnyguilds.command.admin.AddCommand
+import net.dzikoysk.funnyguilds.command.admin.BaseAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.BanCommand
+import net.dzikoysk.funnyguilds.command.admin.DeathsCommand
+import net.dzikoysk.funnyguilds.command.admin.DeleteAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.DeputyAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.GuildsEnabledCommand
+import net.dzikoysk.funnyguilds.command.admin.KickAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.KillsCommand
+import net.dzikoysk.funnyguilds.command.admin.LeaderAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.LivesCommand
+import net.dzikoysk.funnyguilds.command.admin.MainCommand
+import net.dzikoysk.funnyguilds.command.admin.MoveCommand
+import net.dzikoysk.funnyguilds.command.admin.NameCommand
+import net.dzikoysk.funnyguilds.command.admin.PointsCommand
+import net.dzikoysk.funnyguilds.command.admin.SpyCommand
+import net.dzikoysk.funnyguilds.command.admin.TagCommand
+import net.dzikoysk.funnyguilds.command.admin.TeleportCommand
+import net.dzikoysk.funnyguilds.command.admin.UnbanCommand
+import net.dzikoysk.funnyguilds.command.admin.ValidityAdminCommand
+import net.dzikoysk.funnyguilds.command.SettingsBind
+import net.dzikoysk.funnyguilds.command.MessagesBind
+import net.dzikoysk.funnycommands.resources.types.PlayerType
+import net.dzikoysk.funnyguilds.command.GuildsCompleter
+import net.dzikoysk.funnyguilds.command.MembersCompleter
+import net.dzikoysk.funnyguilds.command.FunnyGuildsExceptionHandler
+import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist
+import java.util.function.BiFunction
+import java.time.LocalDateTime
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.GuildDependentTablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.VariableParsingResult
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.TimeFormattedVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariablesParser
+import java.time.format.TextStyle
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.SimpleTablistVariable
+import net.dzikoysk.funnyguilds.util.IntegerRange.MissingFormatException
+import net.dzikoysk.funnyguilds.element.notification.NotificationUtil
+import java.text.MessageFormat
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.v1_8.BossBarProviderImpl
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.DefaultBossBarProvider
+import net.dzikoysk.funnyguilds.element.DummyManager
+import net.dzikoysk.funnyguilds.element.IndividualPrefixManager
+import net.dzikoysk.funnyguilds.listener.region.BlockPlace
+import org.bukkit.event.entity.EntityPlaceEvent
+import net.dzikoysk.funnyguilds.listener.region.GuildHeartProtectionHandler
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerRegistration
+import net.dzikoysk.funnyguilds.concurrency.requests.dummy.DummyGlobalUpdateUserRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateUserPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyRequest
+import net.dzikoysk.funnyguilds.util.commons.ConfigHelper
+import java.util.concurrent.ExecutorService
+import java.lang.InterruptedException
+import java.util.concurrent.Executors
+import net.dzikoysk.funnyguilds.FunnyGuildsVersion
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerManager
+import net.dzikoysk.funnyguilds.data.DataPersistenceHandler
+import net.dzikoysk.funnyguilds.data.InvitationPersistenceHandler
+import net.dzikoysk.funnyguilds.util.nms.DescriptionChanger
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration
+import net.dzikoysk.funnyguilds.util.metrics.MetricsCollector
+import net.dzikoysk.funnyguilds.system.GuildValidationHandler
+import net.dzikoysk.funnyguilds.element.tablist.TablistBroadcastHandler
+import net.dzikoysk.funnyguilds.basic.rank.RankRecalculationTask
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawn
+import java.lang.StackTraceElement
 
-public class TablistImpl extends AbstractTablist {
+class TablistImpl(tablistPattern: Map<Int?, String?>?, header: String?, footer: String?, ping: Int, user: User?) : AbstractTablist(tablistPattern, header, footer, ping, user) {
+    companion object {
+        private val PLAYER_INFO_CLASS: Class<*>? = null
+        private val PLAYER_LIST_HEADER_FOOTER_CLASS: Class<*>? = null
+        private val PLAYER_INFO_DATA_CLASS: Class<*>? = null
+        private val GAME_PROFILE_CLASS: Class<*>? = null
+        private val ENUM_GAMEMODE_CLASS: Class<*>? = null
+        private val BASE_COMPONENT_CLASS: Class<*>? = null
+        private val PLAYER_INFO_CONSTRUCTOR: Constructor<*>? = null
+        private val PLAYER_LIST_HEADER_FOOTER_CONSTRUCTOR: Constructor<*>? = null
+        private val ACTION_ENUM_FIELD: Field? = null
+        private val LIST_FIELD: Field? = null
+        private val HEADER_FIELD: Field? = null
+        private val FOOTER_FIELD: Field? = null
+        private val ADD_PLAYER: Enum<*>? = null
+        private val UPDATE_PLAYER: Enum<*>? = null
+        private const val UUID_PATTERN = "00000000-0000-%s-0000-000000000000"
+        private const val TOKEN = "!@#$^*"
+        private val playerInfoDataConstructor: Constructor<*>? = null
+        private val gameProfileConstructor: Constructor<*>? = null
 
-    private static final Class<?> PLAYER_INFO_CLASS;
-    private static final Class<?> PLAYER_LIST_HEADER_FOOTER_CLASS;
-    private static final Class<?> PLAYER_INFO_DATA_CLASS;
-    private static final Class<?> GAME_PROFILE_CLASS;
-    private static final Class<?> ENUM_GAMEMODE_CLASS;
-    private static final Class<?> BASE_COMPONENT_CLASS;
-
-    private static final Constructor<?> PLAYER_INFO_CONSTRUCTOR;
-    private static final Constructor<?> PLAYER_LIST_HEADER_FOOTER_CONSTRUCTOR;
-    
-    private static final Field ACTION_ENUM_FIELD;
-    private static final Field LIST_FIELD;
-    private static final Field HEADER_FIELD;
-    private static final Field FOOTER_FIELD;
-
-    private static final Enum<?> ADD_PLAYER;
-    private static final Enum<?> UPDATE_PLAYER;
-    private static final String UUID_PATTERN = "00000000-0000-%s-0000-000000000000";
-    private static final String TOKEN = "!@#$^*";
-    
-    private static Constructor<?> playerInfoDataConstructor;
-    private static Constructor<?> gameProfileConstructor;
-
-    static {
-        PLAYER_INFO_CLASS = Reflections.getNMSClass("PacketPlayOutPlayerInfo");
-        PLAYER_LIST_HEADER_FOOTER_CLASS = Reflections.getNMSClass("PacketPlayOutPlayerListHeaderFooter");
-        PLAYER_INFO_DATA_CLASS = Reflections.getNMSClass("PacketPlayOutPlayerInfo$PlayerInfoData");
-        GAME_PROFILE_CLASS = Reflections.getClass("com.mojang.authlib.GameProfile");
-        ENUM_GAMEMODE_CLASS = Reflections.getNMSClass("EnumGamemode");
-        BASE_COMPONENT_CLASS = Reflections.getNMSClass("IChatBaseComponent");
-
-        PLAYER_INFO_CONSTRUCTOR = Reflections.getConstructor(PLAYER_INFO_CLASS);
-        PLAYER_LIST_HEADER_FOOTER_CONSTRUCTOR = Reflections.getConstructor(PLAYER_LIST_HEADER_FOOTER_CLASS);
-        
-        ACTION_ENUM_FIELD = Reflections.getField(PLAYER_INFO_CLASS, "a");
-        LIST_FIELD = Reflections.getField(PLAYER_INFO_CLASS, "b");
-        HEADER_FIELD = Reflections.getField(PLAYER_LIST_HEADER_FOOTER_CLASS, "a");
-        FOOTER_FIELD = Reflections.getField(PLAYER_LIST_HEADER_FOOTER_CLASS, "b");
-
-        ADD_PLAYER = (Enum<?>) Reflections.getNMSClass("PacketPlayOutPlayerInfo$EnumPlayerInfoAction").getEnumConstants()[0];
-        UPDATE_PLAYER = (Enum<?>) Reflections.getNMSClass("PacketPlayOutPlayerInfo$EnumPlayerInfoAction").getEnumConstants()[3];
-
-        try {
-            playerInfoDataConstructor = PLAYER_INFO_DATA_CLASS.getConstructor(
-                    PLAYER_INFO_CLASS,
-                    GAME_PROFILE_CLASS,
-                    int.class,
-                    ENUM_GAMEMODE_CLASS,
-                    BASE_COMPONENT_CLASS
-            );
-            
-            gameProfileConstructor = GAME_PROFILE_CLASS.getConstructor(
-                    UUID.class,
-                    String.class
-            );
-        } catch (final NoSuchMethodException exception) {
-            FunnyGuilds.getPluginLogger().error("Method not found", exception);
+        init {
+            TablistImpl.Companion.PLAYER_INFO_CLASS = Reflections.getNMSClass("PacketPlayOutPlayerInfo")
+            TablistImpl.Companion.PLAYER_LIST_HEADER_FOOTER_CLASS = Reflections.getNMSClass("PacketPlayOutPlayerListHeaderFooter")
+            TablistImpl.Companion.PLAYER_INFO_DATA_CLASS = Reflections.getNMSClass("PacketPlayOutPlayerInfo\$PlayerInfoData")
+            TablistImpl.Companion.GAME_PROFILE_CLASS = Reflections.getClass("com.mojang.authlib.GameProfile")
+            TablistImpl.Companion.ENUM_GAMEMODE_CLASS = Reflections.getNMSClass("EnumGamemode")
+            TablistImpl.Companion.BASE_COMPONENT_CLASS = Reflections.getNMSClass("IChatBaseComponent")
+            TablistImpl.Companion.PLAYER_INFO_CONSTRUCTOR = Reflections.getConstructor(TablistImpl.Companion.PLAYER_INFO_CLASS)
+            TablistImpl.Companion.PLAYER_LIST_HEADER_FOOTER_CONSTRUCTOR = Reflections.getConstructor(TablistImpl.Companion.PLAYER_LIST_HEADER_FOOTER_CLASS)
+            TablistImpl.Companion.ACTION_ENUM_FIELD = Reflections.getField(TablistImpl.Companion.PLAYER_INFO_CLASS, "a")
+            TablistImpl.Companion.LIST_FIELD = Reflections.getField(TablistImpl.Companion.PLAYER_INFO_CLASS, "b")
+            TablistImpl.Companion.HEADER_FIELD = Reflections.getField(TablistImpl.Companion.PLAYER_LIST_HEADER_FOOTER_CLASS, "a")
+            TablistImpl.Companion.FOOTER_FIELD = Reflections.getField(TablistImpl.Companion.PLAYER_LIST_HEADER_FOOTER_CLASS, "b")
+            TablistImpl.Companion.ADD_PLAYER = Reflections.getNMSClass("PacketPlayOutPlayerInfo\$EnumPlayerInfoAction")!!.enumConstants[0] as Enum<*>
+            TablistImpl.Companion.UPDATE_PLAYER = Reflections.getNMSClass("PacketPlayOutPlayerInfo\$EnumPlayerInfoAction")!!.enumConstants[3] as Enum<*>
+            try {
+                TablistImpl.Companion.playerInfoDataConstructor = TablistImpl.Companion.PLAYER_INFO_DATA_CLASS.getConstructor(
+                    TablistImpl.Companion.PLAYER_INFO_CLASS,
+                    TablistImpl.Companion.GAME_PROFILE_CLASS,
+                    Int::class.javaPrimitiveType,
+                    TablistImpl.Companion.ENUM_GAMEMODE_CLASS,
+                    TablistImpl.Companion.BASE_COMPONENT_CLASS
+                )
+                TablistImpl.Companion.gameProfileConstructor = TablistImpl.Companion.GAME_PROFILE_CLASS.getConstructor(
+                    UUID::class.java,
+                    String::class.java
+                )
+            } catch (exception: NoSuchMethodException) {
+                FunnyGuilds.Companion.getPluginLogger().error("Method not found", exception)
+            }
         }
-
     }
 
-    private final Object[] profileCache = new Object[DEFAULT_CELLS_AMOUNT];
-
-    public TablistImpl(Map<Integer, String> tablistPattern, String header, String footer, int ping, User user) {
-        super(tablistPattern, header, footer, ping, user);
-    }
-
-    @Override
-    public void send() {
-        final List<Object> packets = Lists.newArrayList();
-        final List<Object> addPlayerList = Lists.newArrayList();
-        final List<Object> updatePlayerList = Lists.newArrayList();
-
+    private val profileCache = arrayOfNulls<Any>(AbstractTablist.Companion.DEFAULT_CELLS_AMOUNT)
+    override fun send() {
+        val packets: MutableList<Any> = Lists.newArrayList()
+        val addPlayerList: MutableList<Any> = Lists.newArrayList()
+        val updatePlayerList: MutableList<Any> = Lists.newArrayList()
         try {
-            final Object addPlayerPacket = PLAYER_INFO_CONSTRUCTOR.newInstance();
-            final Object updatePlayerPacket = PLAYER_INFO_CONSTRUCTOR.newInstance();
-            final String[] preparedCells = this.putVarsPrepareCells(cells, tablistPattern, super.header, super.footer);
-
-            for (int i = 0; i < cells; i++) {
+            val addPlayerPacket: Any = TablistImpl.Companion.PLAYER_INFO_CONSTRUCTOR.newInstance()
+            val updatePlayerPacket: Any = TablistImpl.Companion.PLAYER_INFO_CONSTRUCTOR.newInstance()
+            val preparedCells = putVarsPrepareCells(cells, tablistPattern, super.header, super.footer)
+            for (i in 0 until cells) {
                 if (profileCache[i] == null) {
-                    profileCache[i] = gameProfileConstructor.newInstance(UUID.fromString(String.format(UUID_PATTERN, ChatUtils.appendDigit(i))), TOKEN + ChatUtils.appendDigit(i));
+                    profileCache[i] = TablistImpl.Companion.gameProfileConstructor.newInstance(
+                        UUID.fromString(kotlin.String.format(TablistImpl.Companion.UUID_PATTERN, ChatUtils.appendDigit(i))),
+                        TablistImpl.Companion.TOKEN + ChatUtils.appendDigit(i)
+                    )
                 }
-
-                String text = preparedCells[i];
-                Object gameProfile = profileCache[i];
-                Object gameMode = ENUM_GAMEMODE_CLASS.getEnumConstants()[1];
-                Object component = this.createBaseComponent(text, false);
-
-                Object playerInfoData = playerInfoDataConstructor.newInstance(
-                        null,
-                        gameProfile,
-                        ping,
-                        gameMode,
-                        component
-                );
-
+                val text = preparedCells[i]
+                val gameProfile = profileCache[i]
+                val gameMode: Any = TablistImpl.Companion.ENUM_GAMEMODE_CLASS.getEnumConstants().get(1)
+                val component = createBaseComponent(text, false)
+                val playerInfoData: Any = TablistImpl.Companion.playerInfoDataConstructor.newInstance(
+                    null,
+                    gameProfile,
+                    ping,
+                    gameMode,
+                    component
+                )
                 if (firstPacket) {
-                    addPlayerList.add(playerInfoData);
+                    addPlayerList.add(playerInfoData)
                 }
-
-                updatePlayerList.add(playerInfoData);
+                updatePlayerList.add(playerInfoData)
             }
-
             if (firstPacket) {
-                firstPacket = false;
+                firstPacket = false
             }
-
-            packets.add(addPlayerPacket);
-            packets.add(updatePlayerPacket);
-
-            ACTION_ENUM_FIELD.setAccessible(true);
-            LIST_FIELD.setAccessible(true);
-            HEADER_FIELD.setAccessible(true);
-            FOOTER_FIELD.setAccessible(true);
-
-            ACTION_ENUM_FIELD.set(addPlayerPacket, ADD_PLAYER);
-            LIST_FIELD.set(addPlayerPacket, addPlayerList);
-            ACTION_ENUM_FIELD.set(updatePlayerPacket, UPDATE_PLAYER);
-            LIST_FIELD.set(updatePlayerPacket, updatePlayerList);
-
-            Object header = this.createBaseComponent(preparedCells[DEFAULT_CELLS_AMOUNT], true);
-            Object footer = this.createBaseComponent(preparedCells[DEFAULT_CELLS_AMOUNT + 1], true);
-
-            if (this.shouldUseHeaderAndFooter()) {
-                final Object headerFooterPacket = PLAYER_LIST_HEADER_FOOTER_CONSTRUCTOR.newInstance();
-                HEADER_FIELD.set(headerFooterPacket, header);
-                FOOTER_FIELD.set(headerFooterPacket, footer);
-                packets.add(headerFooterPacket);
+            packets.add(addPlayerPacket)
+            packets.add(updatePlayerPacket)
+            TablistImpl.Companion.ACTION_ENUM_FIELD.setAccessible(true)
+            TablistImpl.Companion.LIST_FIELD.setAccessible(true)
+            TablistImpl.Companion.HEADER_FIELD.setAccessible(true)
+            TablistImpl.Companion.FOOTER_FIELD.setAccessible(true)
+            TablistImpl.Companion.ACTION_ENUM_FIELD.set(addPlayerPacket, TablistImpl.Companion.ADD_PLAYER)
+            TablistImpl.Companion.LIST_FIELD.set(addPlayerPacket, addPlayerList)
+            TablistImpl.Companion.ACTION_ENUM_FIELD.set(updatePlayerPacket, TablistImpl.Companion.UPDATE_PLAYER)
+            TablistImpl.Companion.LIST_FIELD.set(updatePlayerPacket, updatePlayerList)
+            val header = createBaseComponent(preparedCells[AbstractTablist.Companion.DEFAULT_CELLS_AMOUNT], true)
+            val footer = createBaseComponent(preparedCells[AbstractTablist.Companion.DEFAULT_CELLS_AMOUNT + 1], true)
+            if (shouldUseHeaderAndFooter()) {
+                val headerFooterPacket: Any = TablistImpl.Companion.PLAYER_LIST_HEADER_FOOTER_CONSTRUCTOR.newInstance()
+                TablistImpl.Companion.HEADER_FIELD.set(headerFooterPacket, header)
+                TablistImpl.Companion.FOOTER_FIELD.set(headerFooterPacket, footer)
+                packets.add(headerFooterPacket)
             }
-
-            this.sendPackets(packets);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException exception) {
-            FunnyGuilds.getPluginLogger().error("Could not send packets", exception);
+            sendPackets(packets)
+        } catch (exception: InstantiationException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not send packets", exception)
+        } catch (exception: IllegalAccessException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not send packets", exception)
+        } catch (exception: InvocationTargetException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not send packets", exception)
         }
     }
 }

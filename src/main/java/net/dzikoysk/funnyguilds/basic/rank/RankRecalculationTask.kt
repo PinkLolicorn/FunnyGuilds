@@ -1,68 +1,49 @@
-package net.dzikoysk.funnyguilds.basic.rank;
+package net.dzikoysk.funnyguilds.basic.rank
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.basic.user.UserUtils;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.PermissionUtils;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PermissionUtils
+import java.util.*
 
-import java.util.Collections;
-import java.util.NavigableSet;
-import java.util.TreeSet;
-
-public class RankRecalculationTask implements Runnable {
-
-    @Override
-    public void run() {
-        RankManager manager = RankManager.getInstance();
-
-        this.recalculateUsersRank(manager);
-        this.recalculateGuildsRank(manager);
+class RankRecalculationTask : Runnable {
+    override fun run() {
+        val manager: RankManager = RankManager.Companion.getInstance()
+        recalculateUsersRank(manager)
+        recalculateGuildsRank(manager)
     }
 
-    private void recalculateUsersRank(RankManager manager) {
-        NavigableSet<Rank> usersRank = new TreeSet<>(Collections.reverseOrder());
-
-        for (User user : UserUtils.getUsers()) {
-            Rank userRank = user.getRank();
-
-            if (FunnyGuilds.getInstance().getPluginConfiguration().skipPrivilegedPlayersInRankPositions &&
-                    PermissionUtils.isPrivileged(user, "funnyguilds.ranking.exempt")) {
-                continue;
+    private fun recalculateUsersRank(manager: RankManager) {
+        val usersRank: NavigableSet<Rank?> = TreeSet(Collections.reverseOrder())
+        for (user in UserUtils.getUsers()) {
+            val userRank = user.rank
+            if (FunnyGuilds.Companion.getInstance().getPluginConfiguration().skipPrivilegedPlayersInRankPositions &&
+                PermissionUtils.isPrivileged(user, "funnyguilds.ranking.exempt")
+            ) {
+                continue
             }
-
-            usersRank.add(userRank);
+            usersRank.add(userRank)
         }
-
-        int position = 0;
-
-        for (Rank userRank : usersRank) {
-            userRank.setPosition(++position);
+        var position = 0
+        for (userRank in usersRank) {
+            userRank.setPosition(++position)
         }
-
-        manager.usersRank = usersRank;
+        manager.usersRank = usersRank
     }
 
-    private void recalculateGuildsRank(RankManager manager) {
-        NavigableSet<Rank> guildsRank = new TreeSet<>(Collections.reverseOrder());
-
-        for (Guild guild : GuildUtils.getGuilds()) {
-            Rank guildRank = guild.getRank();
-
-            if (guild.getMembers().size() < FunnyGuilds.getInstance().getPluginConfiguration().minMembersToInclude) {
-                continue;
+    private fun recalculateGuildsRank(manager: RankManager) {
+        val guildsRank: NavigableSet<Rank?> = TreeSet(Collections.reverseOrder())
+        for (guild in GuildUtils.getGuilds()) {
+            val guildRank = guild.rank
+            if (guild!!.members.size < FunnyGuilds.Companion.getInstance().getPluginConfiguration().minMembersToInclude) {
+                continue
             }
-
-            guildsRank.add(guildRank);
+            guildsRank.add(guildRank)
         }
-
-        int position = 0;
-
-        for (Rank guildRank : guildsRank) {
-            guildRank.setPosition(++position);
+        var position = 0
+        for (guildRank in guildsRank) {
+            guildRank.setPosition(++position)
         }
-
-        manager.guildsRank = guildsRank;
+        manager.guildsRank = guildsRank
     }
 }

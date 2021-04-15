@@ -1,175 +1,505 @@
-package net.dzikoysk.funnyguilds.command;
+package net.dzikoysk.funnyguilds.commandimport
 
-import net.dzikoysk.funnycommands.FunnyCommands;
-import net.dzikoysk.funnycommands.resources.types.PlayerType;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.command.admin.AddCommand;
-import net.dzikoysk.funnyguilds.command.admin.BanCommand;
-import net.dzikoysk.funnyguilds.command.admin.BaseAdminCommand;
-import net.dzikoysk.funnyguilds.command.admin.DeathsCommand;
-import net.dzikoysk.funnyguilds.command.admin.DeleteAdminCommand;
-import net.dzikoysk.funnyguilds.command.admin.DeputyAdminCommand;
-import net.dzikoysk.funnyguilds.command.admin.GuildsEnabledCommand;
-import net.dzikoysk.funnyguilds.command.admin.KickAdminCommand;
-import net.dzikoysk.funnyguilds.command.admin.KillsCommand;
-import net.dzikoysk.funnyguilds.command.admin.LeaderAdminCommand;
-import net.dzikoysk.funnyguilds.command.admin.LivesCommand;
-import net.dzikoysk.funnyguilds.command.admin.MainCommand;
-import net.dzikoysk.funnyguilds.command.admin.MoveCommand;
-import net.dzikoysk.funnyguilds.command.admin.NameCommand;
-import net.dzikoysk.funnyguilds.command.admin.PointsCommand;
-import net.dzikoysk.funnyguilds.command.admin.ProtectionCommand;
-import net.dzikoysk.funnyguilds.command.admin.SpyCommand;
-import net.dzikoysk.funnyguilds.command.admin.TagCommand;
-import net.dzikoysk.funnyguilds.command.admin.TeleportCommand;
-import net.dzikoysk.funnyguilds.command.admin.UnbanCommand;
-import net.dzikoysk.funnyguilds.command.admin.ValidityAdminCommand;
-import net.dzikoysk.funnyguilds.command.user.AllyCommand;
-import net.dzikoysk.funnyguilds.command.user.BaseCommand;
-import net.dzikoysk.funnyguilds.command.user.BreakCommand;
-import net.dzikoysk.funnyguilds.command.user.ConfirmCommand;
-import net.dzikoysk.funnyguilds.command.user.CreateCommand;
-import net.dzikoysk.funnyguilds.command.user.DeleteCommand;
-import net.dzikoysk.funnyguilds.command.user.DeputyCommand;
-import net.dzikoysk.funnyguilds.command.user.EnlargeCommand;
-import net.dzikoysk.funnyguilds.command.user.EscapeCommand;
-import net.dzikoysk.funnyguilds.command.user.FunnyGuildsCommand;
-import net.dzikoysk.funnyguilds.command.user.GuildCommand;
-import net.dzikoysk.funnyguilds.command.user.InfoCommand;
-import net.dzikoysk.funnyguilds.command.user.InviteCommand;
-import net.dzikoysk.funnyguilds.command.user.ItemsCommand;
-import net.dzikoysk.funnyguilds.command.user.JoinCommand;
-import net.dzikoysk.funnyguilds.command.user.KickCommand;
-import net.dzikoysk.funnyguilds.command.user.LeaderCommand;
-import net.dzikoysk.funnyguilds.command.user.LeaveCommand;
-import net.dzikoysk.funnyguilds.command.user.PlayerInfoCommand;
-import net.dzikoysk.funnyguilds.command.user.PvPCommand;
-import net.dzikoysk.funnyguilds.command.user.RankResetCommand;
-import net.dzikoysk.funnyguilds.command.user.RankingCommand;
-import net.dzikoysk.funnyguilds.command.user.SetBaseCommand;
-import net.dzikoysk.funnyguilds.command.user.TopCommand;
-import net.dzikoysk.funnyguilds.command.user.ValidityCommand;
-import net.dzikoysk.funnyguilds.command.user.WarCommand;
-import net.dzikoysk.funnyguilds.command.user.TntCommand;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.Commands.FunnyCommand;
-import org.bukkit.Server;
-import org.panda_lang.utilities.commons.text.Joiner;
+import net.dzikoysk.funnycommands.FunnyCommands
+import net.dzikoysk.funnycommands.resources.types.PlayerType
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.command.*
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration.CommandComponents
+import net.dzikoysk.funnyguilds.command.admin.*
+import net.dzikoysk.funnyguilds.command.user.*
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration
+import org.bukkit.Server
+import org.panda_lang.utilities.commons.text.Joiner
+import java.util.function.Function
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
+net.dzikoysk.funnyguilds.data .flat.FlatDataModel
+import net.dzikoysk.funnyguilds.util.YamlWrapper
+import net.dzikoysk.funnyguilds.data.util.DeserializationUtils
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import net.dzikoysk.funnyguilds.basic.guild.RegionUtils
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.data.flat.FlatGuild
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import net.dzikoysk.funnyguilds.data.flat.FlatUser
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseFixAlliesRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdateRequest
+import net.dzikoysk.funnyguilds.data.flat.FlatPatcher
+import net.dzikoysk.funnyguilds.data.util.InvitationList.Invitation
+import net.dzikoysk.funnyguilds.data.util.InvitationList
+import com.google.common.collect.ImmutableList
+import java.util.stream.Collectors
+import net.dzikoysk.funnyguilds.data.util.InvitationList.InvitationType
+import net.dzikoysk.funnyguilds.data.util.ConfirmationList
+import net.dzikoysk.funnyguilds.basic.user.UserBan
+import org.diorite.cfg.annotations.CfgClass
+import org.diorite.cfg.annotations.defaults.CfgDelegateDefault
+import org.diorite.cfg.annotations.CfgComment
+import org.diorite.cfg.annotations.CfgExclude
+import net.dzikoysk.funnyguilds.util.Cooldown
+import java.text.SimpleDateFormat
+import org.diorite.cfg.annotations.CfgName
+import org.diorite.cfg.annotations.CfgStringStyle
+import org.diorite.cfg.annotations.CfgStringStyle.StringStyle
+import net.dzikoysk.funnyguilds.basic.guild.GuildRegex
+import org.diorite.cfg.annotations.CfgCollectionStyle
+import org.diorite.cfg.annotations.CfgCollectionStyle.CollectionStyle
+import java.time.LocalTime
+import com.google.common.collect.ImmutableMap
+import net.dzikoysk.funnyguilds.basic.rank.RankSystem
+import net.dzikoysk.funnyguilds.util.IntegerRange
+import net.dzikoysk.funnyguilds.element.notification.NotificationStyle
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarOptions
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.MySQL
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemUtils
+import net.dzikoysk.funnyguilds.basic.rank.RankUtils
+import java.lang.IndexOutOfBoundsException
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemBuilder
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MaterialUtils
+import kotlin.collections.MutableMap.MutableEntry
+import java.lang.NumberFormatException
+import java.util.EnumMap
+import java.time.format.DateTimeFormatter
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.Commands.AdminCommands
+import kotlin.jvm.JvmOverloads
+import net.dzikoysk.funnyguilds.data.database.element.SQLElement
+import net.dzikoysk.funnyguilds.data.database.element.SQLTable
+import net.dzikoysk.funnyguilds.data.database.element.SQLNamedStatement
+import net.dzikoysk.funnyguilds.data.database.Database
+import java.sql.PreparedStatement
+import java.sql.SQLException
+import java.sql.ResultSet
+import kotlin.Throws
+import com.zaxxer.hikari.HikariDataSource
+import net.dzikoysk.funnyguilds.data.database.element.SQLBasicUtils
+import net.dzikoysk.funnyguilds.data.database.SQLDataModel
+import net.dzikoysk.funnyguilds.data.database.DatabaseUser
+import net.dzikoysk.funnyguilds.data.database.DatabaseRegion
+import net.dzikoysk.funnyguilds.data.database.DatabaseGuild
+import kotlin.jvm.Volatile
+import java.lang.Runnable
+import net.dzikoysk.funnyguilds.concurrency.requests.DataSaveRequest
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEditHook
+import com.sk89q.worldedit.bukkit.BukkitWorld
+import com.sk89q.jnbt.NBTInputStream
+import java.util.zip.GZIPInputStream
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.session.PasteBuilder
+import com.sk89q.worldedit.function.operation.Operations
+import java.lang.InstantiationException
+import java.lang.RuntimeException
+import java.lang.IllegalAccessException
+import java.lang.reflect.InvocationTargetException
+import com.sk89q.worldedit.MaxChangedBlocksException
+import java.io.IOException
+import com.sk89q.worldedit.extent.Extent
+import java.lang.NoSuchMethodException
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.WorldEditException
+import com.sk89q.worldguard.protection.ApplicableRegionSet
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuardHook
+import java.lang.invoke.MethodHandles
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard6Hook
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin
+import com.sk89q.worldguard.protection.managers.RegionManager
+import com.sk89q.worldguard.protection.flags.StateFlag
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException
+import java.lang.IllegalArgumentException
+import com.sk89q.worldguard.protection.regions.ProtectedRegion
+import com.sk89q.worldguard.WorldGuard
+import net.milkbowl.vault.economy.Economy
+import net.dzikoysk.funnyguilds.hook.VaultHook
+import net.milkbowl.vault.economy.EconomyResponse
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard7Hook
+import java.lang.ClassNotFoundException
+import net.dzikoysk.funnyguilds.hook.FunnyTabHook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit6Hook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit7Hook
+import net.dzikoysk.funnyguilds.hook.BungeeTabListPlusHook
+import net.dzikoysk.funnyguilds.hook.MVdWPlaceholderAPIHook
+import net.dzikoysk.funnyguilds.hook.PlaceholderAPIHook
+import net.dzikoysk.funnyguilds.hook.LeaderHeadsHook
+import net.dzikoysk.funnyguilds.FunnyGuildsLogger
+import net.dzikoysk.funnyguilds.hook.LeaderHeadsHook.TopRankCollector
+import me.robin.leaderheads.datacollectors.DataCollector
+import me.robin.leaderheads.objects.BoardType
+import net.dzikoysk.funnyguilds.basic.rank.RankManager
+import net.dzikoysk.funnyguilds.hook.PlaceholderAPIHook.FunnyGuildsPlaceholder
+import me.clip.placeholderapi.expansion.PlaceholderExpansion
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables
+import codecrafter47.bungeetablistplus.api.bukkit.BungeeTabListPlusBukkitAPI
+import be.maximvdw.placeholderapi.PlaceholderReplaceEvent
+import net.dzikoysk.funnyguilds.util.nms.Reflections.InvalidMarker
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils.SafeInitializer
+import java.lang.Void
+import net.dzikoysk.funnyguilds.util.nms.PacketSender
+import net.dzikoysk.funnyguilds.util.nms.PacketCreator
+import java.lang.ThreadLocal
+import net.dzikoysk.funnyguilds.util.nms.EggTypeChanger
+import java.lang.SecurityException
+import net.dzikoysk.funnyguilds.util.nms.PacketExtension
+import io.netty.channel.ChannelHandler
+import io.netty.channel.ChannelDuplexHandler
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelPromise
+import net.dzikoysk.funnyguilds.concurrency.requests.WarUseRequest
+import io.netty.channel.ChannelPipeline
+import net.dzikoysk.funnyguilds.util.nms.BlockDataChanger
+import net.dzikoysk.funnyguilds.util.nms.GuildEntityHelper
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.util.commons.spigot.ItemComponentUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.NotePitch
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PingUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.SpaceUtils
+import org.panda_lang.utilities.commons.function.QuadFunction
+import java.text.DecimalFormat
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MinecraftServerUtils
+import java.lang.NoSuchFieldException
+import net.md_5.bungee.api.chat.BaseComponent
+import java.io.FileNotFoundException
+import java.io.ByteArrayOutputStream
+import java.io.Closeable
+import java.util.Collections
+import java.util.function.BinaryOperator
+import net.dzikoysk.funnyguilds.util.commons.MapUtil
+import java.util.Locale
+import org.diorite.cfg.system.TemplateCreator
+import org.apache.logging.log4j.core.Appender
+import org.apache.logging.log4j.core.appender.AbstractOutputStreamAppender
+import net.dzikoysk.funnyguilds.util.metrics.BStats
+import net.dzikoysk.funnyguilds.util.metrics.BStats.Country
+import java.io.DataOutputStream
+import net.dzikoysk.funnyguilds.util.metrics.MCStats
+import java.io.BufferedReader
+import java.io.UnsupportedEncodingException
+import java.net.URLEncoder
+import net.dzikoysk.funnyguilds.util.telemetry.FunnyTelemetry
+import net.dzikoysk.funnyguilds.util.telemetry.PasteType
+import net.dzikoysk.funnyguilds.util.telemetry.FunnybinResponse
+import org.diorite.utils.network.DioriteURLUtils
+import net.dzikoysk.funnyguilds.util.FunnyBox
+import net.dzikoysk.funnyguilds.basic.rank.Rank
+import java.util.NavigableSet
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PermissionUtils
+import com.google.common.collect.Iterables
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.user.UserCache
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarProvider
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateUserRequest
+import com.google.common.cache.CacheBuilder
+import net.dzikoysk.funnyguilds.element.IndividualPrefix
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemoveGuildRequest
+import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause
+import net.dzikoysk.funnyguilds.event.FunnyEvent
+import net.dzikoysk.funnyguilds.event.rank.RankEvent
+import net.dzikoysk.funnyguilds.event.rank.RankChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.KillsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.DeathsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.PointsChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildBreakAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildSendAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAcceptAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildRevokeAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberJoinEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberKickEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberDeputyEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaderEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberAcceptInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberRevokeInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildMoveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildUnbanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildDeleteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEnlargeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreCreateEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBaseChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildLivesChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionEnterEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEntityExplodeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildExtendValidityEvent
+import net.dzikoysk.funnyguilds.system.ban.BanUtils
+import net.dzikoysk.funnyguilds.system.war.WarUtils
+import net.dzikoysk.funnyguilds.event.SimpleEventHandler
+import net.dzikoysk.funnyguilds.system.war.WarSystem
+import net.dzikoysk.funnyguilds.command.user.InfoCommand
+import net.dzikoysk.funnyguilds.system.war.WarListener
+import net.dzikoysk.funnyguilds.system.security.SecuritySystem
+import net.dzikoysk.funnycommands.resources.ValidationException
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityReach
+import net.dzikoysk.funnyguilds.system.security.SecurityUtils
+import net.dzikoysk.funnyguilds.system.security.SecurityType
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityFreeCam
+import net.dzikoysk.funnyguilds.system.protection.ProtectionSystem
+import net.dzikoysk.funnyguilds.system.validity.ValidityUtils
+import net.dzikoysk.funnycommands.stereotypes.FunnyComponent
+import net.dzikoysk.funnyguilds.command.CanManage
+import net.dzikoysk.funnyguilds.command.DefaultValidation
+import net.dzikoysk.funnyguilds.command.GuildValidation
+import net.dzikoysk.funnyguilds.command.IsOwner
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTaskBuilder
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTask
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.IsMember
+import java.util.concurrent.atomic.AtomicInteger
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddPlayerRequest
+import net.dzikoysk.funnyguilds.command.UserValidation
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemovePlayerRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdatePlayer
+import net.dzikoysk.funnyguilds.element.gui.GuiWindow
+import net.dzikoysk.funnyguilds.element.gui.GuiItem
+import net.dzikoysk.funnyguilds.command.user.CreateCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.user.DeleteCommand
+import net.dzikoysk.funnyguilds.command.user.ConfirmCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.ReloadRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.FunnybinRequest
+import net.dzikoysk.funnyguilds.command.admin.AdminUtils
+import net.dzikoysk.funnyguilds.command.admin.ProtectionCommand
+import java.lang.IllegalStateException
+import net.dzikoysk.funnyguilds.command.GuildBind
+import net.dzikoysk.funnyguilds.command.UserBind
+import net.dzikoysk.funnyguilds.command.OwnerValidator
+import net.dzikoysk.funnyguilds.command.MemberValidator
+import net.dzikoysk.funnyguilds.command.ManageValidator
+import net.dzikoysk.funnycommands.FunnyCommands
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration.CommandComponents
+import net.dzikoysk.funnyguilds.command.user.AllyCommand
+import net.dzikoysk.funnyguilds.command.user.BaseCommand
+import net.dzikoysk.funnyguilds.command.user.BreakCommand
+import net.dzikoysk.funnyguilds.command.user.DeputyCommand
+import net.dzikoysk.funnyguilds.command.user.EnlargeCommand
+import net.dzikoysk.funnyguilds.command.user.EscapeCommand
+import net.dzikoysk.funnyguilds.command.user.FunnyGuildsCommand
+import net.dzikoysk.funnyguilds.command.user.GuildCommand
+import net.dzikoysk.funnyguilds.command.user.InviteCommand
+import net.dzikoysk.funnyguilds.command.user.ItemsCommand
+import net.dzikoysk.funnyguilds.command.user.JoinCommand
+import net.dzikoysk.funnyguilds.command.user.KickCommand
+import net.dzikoysk.funnyguilds.command.user.LeaderCommand
+import net.dzikoysk.funnyguilds.command.user.LeaveCommand
+import net.dzikoysk.funnyguilds.command.user.PlayerInfoCommand
+import net.dzikoysk.funnyguilds.command.user.PvPCommand
+import net.dzikoysk.funnyguilds.command.user.RankingCommand
+import net.dzikoysk.funnyguilds.command.user.RankResetCommand
+import net.dzikoysk.funnyguilds.command.user.SetBaseCommand
+import net.dzikoysk.funnyguilds.command.user.TopCommand
+import net.dzikoysk.funnyguilds.command.user.ValidityCommand
+import net.dzikoysk.funnyguilds.command.user.WarCommand
+import net.dzikoysk.funnyguilds.command.user.TntCommand
+import net.dzikoysk.funnyguilds.command.admin.AddCommand
+import net.dzikoysk.funnyguilds.command.admin.BaseAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.BanCommand
+import net.dzikoysk.funnyguilds.command.admin.DeathsCommand
+import net.dzikoysk.funnyguilds.command.admin.DeleteAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.DeputyAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.GuildsEnabledCommand
+import net.dzikoysk.funnyguilds.command.admin.KickAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.KillsCommand
+import net.dzikoysk.funnyguilds.command.admin.LeaderAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.LivesCommand
+import net.dzikoysk.funnyguilds.command.admin.MainCommand
+import net.dzikoysk.funnyguilds.command.admin.MoveCommand
+import net.dzikoysk.funnyguilds.command.admin.NameCommand
+import net.dzikoysk.funnyguilds.command.admin.PointsCommand
+import net.dzikoysk.funnyguilds.command.admin.SpyCommand
+import net.dzikoysk.funnyguilds.command.admin.TagCommand
+import net.dzikoysk.funnyguilds.command.admin.TeleportCommand
+import net.dzikoysk.funnyguilds.command.admin.UnbanCommand
+import net.dzikoysk.funnyguilds.command.admin.ValidityAdminCommand
+import net.dzikoysk.funnyguilds.command.SettingsBind
+import net.dzikoysk.funnyguilds.command.MessagesBind
+import net.dzikoysk.funnycommands.resources.types.PlayerType
+import net.dzikoysk.funnyguilds.command.GuildsCompleter
+import net.dzikoysk.funnyguilds.command.MembersCompleter
+import net.dzikoysk.funnyguilds.command.FunnyGuildsExceptionHandler
+import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist
+import java.util.function.BiFunction
+import java.time.LocalDateTime
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.GuildDependentTablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.VariableParsingResult
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.TimeFormattedVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariablesParser
+import java.time.format.TextStyle
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.SimpleTablistVariable
+import net.dzikoysk.funnyguilds.util.IntegerRange.MissingFormatException
+import net.dzikoysk.funnyguilds.element.notification.NotificationUtil
+import java.text.MessageFormat
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.v1_8.BossBarProviderImpl
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.DefaultBossBarProvider
+import net.dzikoysk.funnyguilds.element.DummyManager
+import net.dzikoysk.funnyguilds.element.IndividualPrefixManager
+import net.dzikoysk.funnyguilds.listener.region.BlockPlace
+import org.bukkit.event.entity.EntityPlaceEvent
+import net.dzikoysk.funnyguilds.listener.region.GuildHeartProtectionHandler
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerRegistration
+import net.dzikoysk.funnyguilds.concurrency.requests.dummy.DummyGlobalUpdateUserRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateUserPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyRequest
+import net.dzikoysk.funnyguilds.util.commons.ConfigHelper
+import java.util.concurrent.ExecutorService
+import java.lang.InterruptedException
+import java.util.concurrent.Executors
+import net.dzikoysk.funnyguilds.FunnyGuildsVersion
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerManager
+import net.dzikoysk.funnyguilds.data.DataPersistenceHandler
+import net.dzikoysk.funnyguilds.data.InvitationPersistenceHandler
+import net.dzikoysk.funnyguilds.util.nms.DescriptionChanger
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration
+import net.dzikoysk.funnyguilds.util.metrics.MetricsCollector
+import net.dzikoysk.funnyguilds.system.GuildValidationHandler
+import net.dzikoysk.funnyguilds.element.tablist.TablistBroadcastHandler
+import net.dzikoysk.funnyguilds.basic.rank.RankRecalculationTask
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawn
+import java.lang.StackTraceElement
 
-public final class CommandsConfiguration {
-
-    public FunnyCommands createFunnyCommands(Server server, FunnyGuilds funnyGuilds) {
-        PluginConfiguration configuration = funnyGuilds.getPluginConfiguration();
-        PluginConfiguration.Commands commands = configuration.commands;
-
-        FunnyCommand enlargeCommand = commands.enlarge;
-        enlargeCommand.enabled = enlargeCommand.enabled && configuration.enlargeEnable;
-
-        CommandComponents userCommands = new CommandComponents("user")
-                .command("ally", commands.ally, new AllyCommand())
-                .command("base", commands.base, new BaseCommand())
-                .command("break", commands.break_, new BreakCommand())
-                .command("confirm", commands.confirm, new ConfirmCommand())
-                .command("create", commands.create, new CreateCommand())
-                .command("delete", commands.delete, new DeleteCommand())
-                .command("deputy", commands.deputy, new DeputyCommand())
-                .command("enlarge", enlargeCommand, new EnlargeCommand())
-                .command("escape", commands.escape, new EscapeCommand())
-                .command("funnyguilds", commands.funnyguilds, new FunnyGuildsCommand(funnyGuilds))
-                .command("guild", commands.guild, new GuildCommand())
-                .command("info", commands.info, new InfoCommand())
-                .command("invite", commands.invite, new InviteCommand())
-                .command("items", commands.items, new ItemsCommand())
-                .command("join", commands.join, new JoinCommand())
-                .command("kick", commands.kick, new KickCommand())
-                .command("leader", commands.leader, new LeaderCommand())
-                .command("leave", commands.leave, new LeaveCommand())
-                .command("player", commands.player, new PlayerInfoCommand())
-                .command("pvp", commands.pvp, new PvPCommand())
-                .command("ranking", commands.ranking, new RankingCommand())
-                .command("rank-reset", commands.rankReset, new RankResetCommand())
-                .command("set-base", commands.setbase, new SetBaseCommand())
-                .command("top", commands.top, new TopCommand())
-                .command("validity", commands.validity, new ValidityCommand())
-                .command("war", commands.war, new WarCommand())
-                .command("tnt", commands.tnt, new TntCommand());
-
-        CommandComponents adminCommands = new CommandComponents("admin")
-                .command("add", commands.admin.add, new AddCommand())
-                .command("base", commands.admin.base, new BaseAdminCommand())
-                .command("ban", commands.admin.ban, new BanCommand())
-                .command("deaths", commands.admin.deaths, new DeathsCommand())
-                .command("delete", commands.admin.delete, new DeleteAdminCommand())
-                .command("deputy", commands.admin.deputy, new DeputyAdminCommand())
-                .command("guilds-enabled", commands.admin.enabled, new GuildsEnabledCommand())
-                .command("kick", commands.admin.kick, new KickAdminCommand())
-                .command("kills", commands.admin.kills, new KillsCommand())
-                .command("leader", commands.admin.leader, new LeaderAdminCommand())
-                .command("lives", commands.admin.lives, new LivesCommand())
-                .command("main", commands.admin.main, new MainCommand())
-                .command("move", commands.admin.move, new MoveCommand())
-                .command("name", commands.admin.name, new NameCommand())
-                .command("points", commands.admin.points, new PointsCommand())
-                .command("protection", commands.admin.protection, new ProtectionCommand())
-                .command("spy", commands.admin.spy, new SpyCommand())
-                .command("tag", commands.admin.tag, new TagCommand())
-                .command("teleport", commands.admin.teleport, new TeleportCommand())
-                .command("unban", commands.admin.unban, new UnbanCommand())
-                .command("validity", commands.admin.validity, new ValidityAdminCommand());
-
-        return FunnyCommands.configuration(() -> funnyGuilds)
-                .registerDefaultComponents()
-                .placeholders(userCommands.placeholders)
-                .placeholders(adminCommands.placeholders)
-                .bind(new SettingsBind())
-                .bind(new MessagesBind())
-                .bind(new UserBind())
-                .bind(new GuildBind())
-                .type(new PlayerType(server))
-                .completer(new GuildsCompleter())
-                .completer(new MembersCompleter())
-                .validator(new MemberValidator())
-                .validator(new ManageValidator())
-                .validator(new OwnerValidator())
-                .registerComponents(userCommands.commands)
-                .registerComponents(adminCommands.commands)
-                .exceptionHandler(new FunnyGuildsExceptionHandler(funnyGuilds))
-                .install();
+class CommandsConfiguration {
+    fun createFunnyCommands(server: Server?, funnyGuilds: FunnyGuilds): FunnyCommands {
+        val configuration = funnyGuilds.pluginConfiguration
+        val commands = configuration.commands
+        val enlargeCommand = commands!!.enlarge
+        enlargeCommand!!.enabled = enlargeCommand.enabled && configuration.enlargeEnable
+        val userCommands = CommandComponents("user")
+            .command("ally", commands.ally, AllyCommand())
+            .command("base", commands.base, BaseCommand())
+            .command("break", commands.break_, BreakCommand())
+            .command("confirm", commands.confirm, ConfirmCommand())
+            .command("create", commands.create, CreateCommand())
+            .command("delete", commands.delete, DeleteCommand())
+            .command("deputy", commands.deputy, DeputyCommand())
+            .command("enlarge", enlargeCommand, EnlargeCommand())
+            .command("escape", commands.escape, EscapeCommand())
+            .command("funnyguilds", commands.funnyguilds, FunnyGuildsCommand(funnyGuilds))
+            .command("guild", commands.guild, GuildCommand())
+            .command("info", commands.info, InfoCommand())
+            .command("invite", commands.invite, InviteCommand())
+            .command("items", commands.items, ItemsCommand())
+            .command("join", commands.join, JoinCommand())
+            .command("kick", commands.kick, KickCommand())
+            .command("leader", commands.leader, LeaderCommand())
+            .command("leave", commands.leave, LeaveCommand())
+            .command("player", commands.player, PlayerInfoCommand())
+            .command("pvp", commands.pvp, PvPCommand())
+            .command("ranking", commands.ranking, RankingCommand())
+            .command("rank-reset", commands.rankReset, RankResetCommand())
+            .command("set-base", commands.setbase, SetBaseCommand())
+            .command("top", commands.top, TopCommand())
+            .command("validity", commands.validity, ValidityCommand())
+            .command("war", commands.war, WarCommand())
+            .command("tnt", commands.tnt, TntCommand())
+        val adminCommands = CommandComponents("admin")
+            .command("add", commands.admin.add, AddCommand())
+            .command("base", commands.admin.base, BaseAdminCommand())
+            .command("ban", commands.admin.ban, BanCommand())
+            .command("deaths", commands.admin.deaths, DeathsCommand())
+            .command("delete", commands.admin.delete, DeleteAdminCommand())
+            .command("deputy", commands.admin.deputy, DeputyAdminCommand())
+            .command("guilds-enabled", commands.admin.enabled, GuildsEnabledCommand())
+            .command("kick", commands.admin.kick, KickAdminCommand())
+            .command("kills", commands.admin.kills, KillsCommand())
+            .command("leader", commands.admin.leader, LeaderAdminCommand())
+            .command("lives", commands.admin.lives, LivesCommand())
+            .command("main", commands.admin.main, MainCommand())
+            .command("move", commands.admin.move, MoveCommand())
+            .command("name", commands.admin.name, NameCommand())
+            .command("points", commands.admin.points, PointsCommand())
+            .command("protection", commands.admin.protection, ProtectionCommand())
+            .command("spy", commands.admin.spy, SpyCommand())
+            .command("tag", commands.admin.tag, TagCommand())
+            .command("teleport", commands.admin.teleport, TeleportCommand())
+            .command("unban", commands.admin.unban, UnbanCommand())
+            .command("validity", commands.admin.validity, ValidityAdminCommand())
+        return FunnyCommands.configuration { funnyGuilds }
+            .registerDefaultComponents()
+            .placeholders(userCommands.placeholders)
+            .placeholders(adminCommands.placeholders)
+            .bind(SettingsBind())
+            .bind(MessagesBind())
+            .bind(UserBind())
+            .bind(GuildBind())
+            .type(PlayerType(server))
+            .completer(GuildsCompleter())
+            .completer(MembersCompleter())
+            .validator(MemberValidator())
+            .validator(ManageValidator())
+            .validator(OwnerValidator())
+            .registerComponents(userCommands.commands)
+            .registerComponents(adminCommands.commands)
+            .exceptionHandler(FunnyGuildsExceptionHandler(funnyGuilds))
+            .install()
     }
 
-    private final static class CommandComponents {
-
-        private final String group;
-        private final Map<String, Function<String, String>> placeholders = new HashMap<>();
-        private final List<Object> commands = new ArrayList<>();
-
-        private CommandComponents(String group) {
-            this.group = group;
-        }
-
-        private CommandComponents command(String name, FunnyCommand configuration, Object command) {
-            if (configuration.enabled) {
-                this.placeholders.put(group + "." + name + ".name", key -> configuration.name);
-                this.placeholders.put(group + "." + name + ".aliases", key -> Joiner.on(", ").join(configuration.aliases).toString());
-                this.placeholders.put(group + "." + name + ".description", key -> "");
-                this.commands.add(command);
+    private class CommandComponents(private val group: String) {
+        val placeholders: MutableMap<String, Function<String, String?>> = HashMap()
+        val commands: MutableList<Any> = ArrayList()
+        fun command(name: String, configuration: PluginConfiguration.Commands.FunnyCommand?, command: Any): CommandComponents {
+            if (configuration!!.enabled) {
+                placeholders["$group.$name.name"] = Function { key: String? -> configuration.name }
+                placeholders["$group.$name.aliases"] = Function { key: String? ->
+                    Joiner.on(", ").join(
+                        configuration.aliases
+                    ).toString()
+                }
+                placeholders["$group.$name.description"] = Function { key: String? -> "" }
+                commands.add(command)
             }
-
-            return this;
+            return this
         }
 
-        private CommandComponents command(String name, String alias, Object command) {
-            this.placeholders.put(group + "." + name + ".name", key -> alias);
-            this.commands.add(command);
-            return this;
+        fun command(name: String, alias: String?, command: Any): CommandComponents {
+            placeholders["$group.$name.name"] = Function { key: String? -> alias }
+            commands.add(command)
+            return this
         }
-
     }
-
 }

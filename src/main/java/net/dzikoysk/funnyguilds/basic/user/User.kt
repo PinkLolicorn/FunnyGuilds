@@ -1,263 +1,189 @@
-package net.dzikoysk.funnyguilds.basic.user;
+package net.dzikoysk.funnyguilds.basic.user
 
-import com.google.common.base.Charsets;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.AbstractBasic;
-import net.dzikoysk.funnyguilds.basic.BasicType;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.rank.Rank;
-import net.dzikoysk.funnyguilds.basic.rank.RankManager;
-import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager;
-import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateUserRequest;
-import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarProvider;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.PingUtils;
-import org.apache.commons.lang3.Validate;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
+import com.google.common.base.Charsets
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.BasicType
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.basic.rank.Rank
+import net.dzikoysk.funnyguilds.basic.rank.RankManager
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateUserRequest
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarProvider
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PingUtils
+import org.apache.commons.lang3.Validate
+import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
+import org.bukkit.entity.Player
+import java.lang.ref.WeakReference
+import java.util.*
 
-import java.lang.ref.WeakReference;
-import java.util.UUID;
+class User private constructor(uuid: UUID, name: String) : AbstractBasic() {
+    val uUID: UUID?
+    private override var name: String
+    val cache: UserCache
+    val rank: Rank
+    private var playerRef: WeakReference<Player?>
+    private var guild: Guild? = null
+    var ban: UserBan? = null
+    val bossBar: BossBarProvider
 
-public class User extends AbstractBasic {
+    private constructor(name: String) : this(UUID.nameUUIDFromBytes("OfflinePlayer:$name".toByteArray(Charsets.UTF_8)), name) {}
+    private constructor(player: Player?) : this(player!!.uniqueId, player.name) {}
 
-    private final UUID                  uuid;
-    private       String                name;
-    private final UserCache             cache;
-    private final Rank                  rank;
-    private       WeakReference<Player> playerRef;
-    private       Guild                 guild;
-    private       UserBan               ban;
-    private final BossBarProvider       bossBarProvider;
-
-    private User(UUID uuid, String name) {
-        this.uuid = uuid;
-        this.name = name;
-        this.cache = new UserCache(this);
-        this.rank = new Rank(this);
-        this.playerRef = new WeakReference<>(Bukkit.getPlayer(this.uuid));
-        this.bossBarProvider = BossBarProvider.getBossBar(this);
-        this.markChanged();
+    fun removeGuild() {
+        guild = null
+        markChanged()
+        val concurrencyManager: ConcurrencyManager = FunnyGuilds.Companion.getInstance().getConcurrencyManager()
+        concurrencyManager.postRequests(RankUpdateUserRequest(this))
     }
 
-    private User(String name) {
-        this(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(Charsets.UTF_8)), name);
+    fun hasGuild(): Boolean {
+        return guild != null
     }
 
-    private User(Player player) {
-        this(player.getUniqueId(), player.getName());
+    fun setGuild(guild: Guild?) {
+        this.guild = guild
+        markChanged()
     }
 
-    public void removeGuild() {
-        this.guild = null;
-        this.markChanged();
-
-        ConcurrencyManager concurrencyManager = FunnyGuilds.getInstance().getConcurrencyManager();
-        concurrencyManager.postRequests(new RankUpdateUserRequest(this));
+    fun canManage(): Boolean {
+        return isOwner || isDeputy
     }
 
-    public boolean hasGuild() {
-        return this.guild != null;
+    val isOwner: Boolean
+        get() = if (!hasGuild()) {
+            false
+        } else guild!!.owner == this
+    val isDeputy: Boolean
+        get() = if (!hasGuild()) {
+            false
+        } else guild!!.deputies.contains(this)
+    val isOnline: Boolean
+        get() = if (name == null) {
+            false
+        } else Bukkit.getPlayer(uUID!!) != null
+    val isBanned: Boolean
+        get() = ban != null && ban!!.isBanned
+
+    fun getGuild(): Guild? {
+        return guild
     }
 
-    public void setGuild(Guild guild) {
-        this.guild = guild;
-        this.markChanged();
-    }
-
-    public void setBan(UserBan ban) {
-        this.ban = ban;
-    }
-
-    public boolean canManage() {
-        return isOwner() || isDeputy();
-    }
-
-    public boolean isOwner() {
-        if (! hasGuild()) {
-            return false;
+    val player: Player?
+        get() {
+            if (!isOnline) {
+                return null
+            }
+            var player = playerRef.get()
+            if (player != null) {
+                return player
+            }
+            player = Bukkit.getPlayer(uUID!!)
+            if (player != null) {
+                playerRef = WeakReference(player)
+                return player
+            }
+            return null
         }
+    val offlinePlayer: OfflinePlayer
+        get() = Bukkit.getOfflinePlayer(uUID!!)
+    val ping: Int
+        get() = PingUtils.getPing(player)
 
-        return this.guild.getOwner().equals(this);
+    override fun getName(): String? {
+        return name
     }
 
-    public boolean isDeputy() {
-        if (! hasGuild()) {
-            return false;
-        }
-
-        return this.guild.getDeputies().contains(this);
+    fun setName(name: String) {
+        this.name = name
     }
 
-    public boolean isOnline() {
-        if (this.name == null) {
-            return false;
-        }
+    override val type: BasicType?
+        get() = BasicType.USER
 
-        return Bukkit.getPlayer(this.uuid) != null;
+    fun updateReference(player: Player) {
+        Validate.notNull(player, "you can't update reference with null player!")
+        playerRef = WeakReference(player)
     }
 
-    public boolean isBanned() {
-        return this.ban != null && this.ban.isBanned();
+    fun sendMessage(message: String?): Boolean {
+        val player = player ?: return false
+        player.sendMessage(message!!)
+        return true
     }
 
-    public UUID getUUID() {
-        return this.uuid;
+    override fun hashCode(): Int {
+        val prime = 31
+        var result = 1
+        result = prime * result + if (name == null) 0 else name.hashCode()
+        result = prime * result + if (uUID == null) 0 else uUID.hashCode()
+        return result
     }
 
-    public Guild getGuild() {
-        return this.guild;
-    }
-
-    public Rank getRank() {
-        return this.rank;
-    }
-
-    public UserBan getBan() {
-        return ban;
-    }
-
-    public Player getPlayer() {
-        if (! isOnline()) {
-            return null;
-        }
-
-        Player player = this.playerRef.get();
-
-        if (player != null) {
-            return player;
-        }
-
-        player = Bukkit.getPlayer(this.uuid);
-
-        if (player != null) {
-            this.playerRef = new WeakReference<>(player);
-            return player;
-        }
-
-        return null;
-    }
-
-    public OfflinePlayer getOfflinePlayer() {
-        return Bukkit.getOfflinePlayer(this.uuid);
-    }
-
-    public int getPing() {
-        return PingUtils.getPing(getPlayer());
-    }
-
-    public UserCache getCache() {
-        return this.cache;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public BasicType getType() {
-        return BasicType.USER;
-    }
-
-    public void updateReference(Player player) {
-        Validate.notNull(player, "you can't update reference with null player!");
-
-        this.playerRef = new WeakReference<>(player);
-    }
-
-    public boolean sendMessage(String message) {
-        Player player = getPlayer();
-
-        if (player == null) {
-            return false;
-        }
-
-        player.sendMessage(message);
-        return true;
-    }
-
-    public BossBarProvider getBossBar() {
-        return this.bossBarProvider;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (name == null ? 0 : name.hashCode());
-        result = prime * result + (uuid == null ? 0 : uuid.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
+    override fun equals(obj: Any?): Boolean {
         if (obj == null) {
-            return false;
+            return false
+        }
+        if (obj.javaClass != this.javaClass) {
+            return false
+        }
+        val user = obj as User
+        return if (user.uUID != uUID) {
+            false
+        } else user.getName() == name
+    }
+
+    override fun toString(): String {
+        return name
+    }
+
+    companion object {
+        fun create(uuid: UUID, name: String): User {
+            Validate.notNull(uuid, "uuid can't be null!")
+            Validate.notNull(name, "name can't be null!")
+            Validate.notBlank(name, "name can't be blank!")
+            Validate.isTrue(UserUtils.validateUsername(name), "name is not valid!")
+            val user = User(uuid, name)
+            UserUtils.addUser(user)
+            RankManager.Companion.getInstance().update(user)
+            return user
         }
 
-        if (obj.getClass() != this.getClass()) {
-            return false;
+        fun create(player: Player): User {
+            Validate.notNull(player, "player can't be null!")
+            val user = User(player)
+            UserUtils.addUser(user)
+            RankManager.Companion.getInstance().update(user)
+            return user
         }
 
-        User user = (User) obj;
-
-        if (! user.getUUID().equals(this.uuid)) {
-            return false;
+        operator fun get(uuid: UUID?): User? {
+            return UserUtils.get(uuid)
         }
 
-        return user.getName().equals(this.name);
-    }
-
-    @Override
-    public String toString() {
-        return this.name;
-    }
-
-    public static User create(UUID uuid, String name) {
-        Validate.notNull(uuid, "uuid can't be null!");
-        Validate.notNull(name, "name can't be null!");
-        Validate.notBlank(name, "name can't be blank!");
-        Validate.isTrue(UserUtils.validateUsername(name), "name is not valid!");
-
-        User user = new User(uuid, name);
-        UserUtils.addUser(user);
-        RankManager.getInstance().update(user);
-
-        return user;
-    }
-
-    public static User create(Player player) {
-        Validate.notNull(player, "player can't be null!");
-
-        User user = new User(player);
-        UserUtils.addUser(user);
-        RankManager.getInstance().update(user);
-
-        return user;
-    }
-
-    public static User get(UUID uuid) {
-        return UserUtils.get(uuid);
-    }
-
-    public static User get(Player player) {
-        if (player.getUniqueId().version() == 2) {
-            return new User(player);
+        operator fun get(player: Player?): User? {
+            return if (player!!.uniqueId.version() == 2) {
+                User(player)
+            } else UserUtils.get(player.uniqueId)
         }
 
-        return UserUtils.get(player.getUniqueId());
+        operator fun get(offline: OfflinePlayer): User {
+            return get(offline.name)
+        }
+
+        operator fun get(name: String?): User {
+            return get(name)
+        }
     }
 
-    public static User get(OfflinePlayer offline) {
-        return UserUtils.get(offline.getName());
-    }
-
-    public static User get(String name) {
-        return UserUtils.get(name);
+    init {
+        uUID = uuid
+        this.name = name
+        cache = UserCache(this)
+        rank = Rank(this)
+        playerRef = WeakReference(Bukkit.getPlayer(uUID))
+        bossBar = BossBarProvider.Companion.getBossBar(this)
+        markChanged()
     }
 }

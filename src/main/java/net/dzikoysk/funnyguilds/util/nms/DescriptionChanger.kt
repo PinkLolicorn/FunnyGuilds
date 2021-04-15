@@ -1,35 +1,18 @@
-package net.dzikoysk.funnyguilds.util.nms;
+package net.dzikoysk.funnyguilds.util.nms
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import org.bukkit.plugin.PluginDescriptionFile;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import org.bukkit.plugin.PluginDescriptionFile
 
-import java.lang.reflect.Field;
-
-public final class DescriptionChanger {
-
-    private final PluginDescriptionFile descriptionFile;
-
-    public DescriptionChanger(PluginDescriptionFile descriptionFile) {
-        this.descriptionFile = descriptionFile;
-    }
-
-    public void rename(String pluginName) {
+class DescriptionChanger(private val descriptionFile: PluginDescriptionFile) {
+    fun rename(pluginName: String?) {
         if (pluginName == null || pluginName.isEmpty()) {
-            return;
+            return
         }
-        
         try {
-            Field field = Reflections.getPrivateField(descriptionFile.getClass(), "name");
-
-            if (field == null) {
-                return;
-            }
-
-            field.set(descriptionFile, pluginName);
-        }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().error("Could not change description file", ex);
+            val field = Reflections.getPrivateField(descriptionFile.javaClass, "name") ?: return
+            field[descriptionFile] = pluginName
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not change description file", ex)
         }
     }
-
 }

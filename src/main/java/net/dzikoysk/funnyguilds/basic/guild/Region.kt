@@ -1,208 +1,163 @@
-package net.dzikoysk.funnyguilds.basic.guild;
+package net.dzikoysk.funnyguilds.basic.guild
 
-import net.dzikoysk.funnyguilds.basic.AbstractBasic;
-import net.dzikoysk.funnyguilds.basic.BasicType;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.block.BlockFace;
-import org.bukkit.util.Vector;
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.BasicType
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.World
+import org.bukkit.block.BlockFace
+import org.bukkit.util.Vector
 
-public class Region extends AbstractBasic {
+class Region : AbstractBasic {
+    private override var name: String
+    private var guild: Guild? = null
+    var center: Location? = null
+        private set
+    var world: World? = null
+        private set
+    private var size = 0
+    var enlarge = 0
+        set(i) {
+            field = i
+            super.markChanged()
+        }
+    var firstCorner: Location? = null
+        private set
+    var secondCorner: Location? = null
+        private set
 
-    private String name;
-    private Guild guild;
-    private Location center;
-    private World world;
-    private int size;
-    private int enlarge;
-    private Location firstCorner;
-    private Location secondCorner;
-
-    private Region(String name) {
-        this.name = name;
+    private constructor(name: String) {
+        this.name = name
     }
 
-    public Region(Guild guild, Location loc, int size) {
-        this.guild = guild;
-        this.name = guild.getName();
-        this.world = loc.getWorld();
-        this.center = loc;
-        this.size = size;
-        this.update();
+    constructor(guild: Guild, loc: Location, size: Int) {
+        this.guild = guild
+        name = guild.name!!
+        world = loc.world
+        center = loc
+        this.size = size
+        update()
     }
 
-    public synchronized void update() {
-        super.markChanged();
-
-        if (this.center == null) {
-            return;
+    @Synchronized
+    fun update() {
+        super.markChanged()
+        if (center == null) {
+            return
         }
-
-        if (this.size < 1) {
-            return;
+        if (size < 1) {
+            return
         }
-
-        if (this.world == null) {
-            this.world = Bukkit.getWorlds().get(0);
+        if (world == null) {
+            world = Bukkit.getWorlds()[0]
         }
-
-        if (this.world != null) {
-            int lx = this.center.getBlockX() + this.size;
-            int lz = this.center.getBlockZ() + this.size;
-
-            int px = this.center.getBlockX() - this.size;
-            int pz = this.center.getBlockZ() - this.size;
-
-            Vector l = new Vector(lx, 0, lz);
-            Vector p = new Vector(px, this.world.getMaxHeight(), pz);
-
-            this.firstCorner = l.toLocation(this.world);
-            this.secondCorner = p.toLocation(this.world);
+        if (world != null) {
+            val lx = center!!.blockX + size
+            val lz = center!!.blockZ + size
+            val px = center!!.blockX - size
+            val pz = center!!.blockZ - size
+            val l = Vector(lx, 0, lz)
+            val p = Vector(px, world!!.maxHeight, pz)
+            firstCorner = l.toLocation(world!!)
+            secondCorner = p.toLocation(world!!)
         }
     }
 
-    public void delete() {
-        RegionUtils.removeRegion(this);
-        this.guild = null;
-        this.world = null;
-        this.center = null;
-        this.firstCorner = null;
-        this.secondCorner = null;
+    fun delete() {
+        RegionUtils.removeRegion(this)
+        guild = null
+        world = null
+        center = null
+        firstCorner = null
+        secondCorner = null
     }
 
-    public boolean isIn(Location loc) {
-        if (loc == null || this.firstCorner == null || this.secondCorner == null) {
-            return false;
+    fun isIn(loc: Location?): Boolean {
+        if (loc == null || firstCorner == null || secondCorner == null) {
+            return false
         }
-
-        if (!this.center.getWorld().equals(loc.getWorld())) {
-            return false;
+        if (center!!.world != loc.world) {
+            return false
         }
-
-        if (loc.getBlockX() > this.getLowerX() && loc.getBlockX() < this.getUpperX()) {
-            if (loc.getBlockY() > this.getLowerY() && loc.getBlockY() < this.getUpperY()) {
-                return loc.getBlockZ() > this.getLowerZ() && loc.getBlockZ() < this.getUpperZ();
+        if (loc.blockX > lowerX && loc.blockX < upperX) {
+            if (loc.blockY > lowerY && loc.blockY < upperY) {
+                return loc.blockZ > lowerZ && loc.blockZ < upperZ
             }
         }
-
-        return false;
+        return false
     }
 
-    private int compareCoordinates(boolean upper, int a, int b) {
-        if (upper) {
-            return Math.max(b, a);
-        }
-        else {
-            return Math.min(a, b);
+    private fun compareCoordinates(upper: Boolean, a: Int, b: Int): Int {
+        return if (upper) {
+            Math.max(b, a)
+        } else {
+            Math.min(a, b)
         }
     }
 
-    public void setName(String s) {
-        this.name = s;
-        super.markChanged();
+    fun setName(s: String) {
+        name = s
+        super.markChanged()
     }
 
-    public void setGuild(Guild guild) {
-        this.guild = guild;
-        super.markChanged();
+    fun setGuild(guild: Guild?) {
+        this.guild = guild
+        super.markChanged()
     }
 
-    public void setCenter(Location loc) {
-        this.center = loc;
-        this.world = loc.getWorld();
-        this.update();
+    fun setCenter(loc: Location) {
+        center = loc
+        world = loc.world
+        update()
     }
 
-    public void setSize(int i) {
-        this.size = i;
-        this.update();
+    fun setSize(i: Int) {
+        size = i
+        update()
     }
 
-    public void setEnlarge(int i) {
-        this.enlarge = i;
-        super.markChanged();
+    fun getGuild(): Guild? {
+        return guild
     }
 
-    public Guild getGuild() {
-        return this.guild;
+    val heart: Location
+        get() = center!!.block.getRelative(BlockFace.DOWN).location
+
+    fun getSize(): Int {
+        return size
     }
 
-    public Location getCenter() {
-        return this.center;
+    val upperX: Int
+        get() = compareCoordinates(true, firstCorner!!.blockX, secondCorner!!.blockX)
+    val upperY: Int
+        get() = compareCoordinates(true, firstCorner!!.blockY, secondCorner!!.blockY)
+    val upperZ: Int
+        get() = compareCoordinates(true, firstCorner!!.blockZ, secondCorner!!.blockZ)
+    val lowerX: Int
+        get() = compareCoordinates(false, firstCorner!!.blockX, secondCorner!!.blockX)
+    val lowerY: Int
+        get() = compareCoordinates(false, firstCorner!!.blockY, secondCorner!!.blockY)
+    val lowerZ: Int
+        get() = compareCoordinates(false, firstCorner!!.blockZ, secondCorner!!.blockZ)
+    override val type: BasicType?
+        get() = BasicType.REGION
+
+    override fun getName(): String? {
+        return name
     }
 
-    public Location getHeart() {
-        return getCenter().getBlock().getRelative(BlockFace.DOWN).getLocation();
+    override fun toString(): String {
+        return name
     }
 
-    public int getSize() {
-        return this.size;
-    }
-
-    public World getWorld() {
-        return this.world;
-    }
-
-    public int getEnlarge() {
-        return this.enlarge;
-    }
-
-    public int getUpperX() {
-        return compareCoordinates(true, firstCorner.getBlockX(), secondCorner.getBlockX());
-    }
-
-    public int getUpperY() {
-        return compareCoordinates(true, firstCorner.getBlockY(), secondCorner.getBlockY());
-    }
-
-    public int getUpperZ() {
-        return compareCoordinates(true, firstCorner.getBlockZ(), secondCorner.getBlockZ());
-    }
-
-    public int getLowerX() {
-        return compareCoordinates(false, firstCorner.getBlockX(), secondCorner.getBlockX());
-    }
-
-    public int getLowerY() {
-        return compareCoordinates(false, firstCorner.getBlockY(), secondCorner.getBlockY());
-    }
-
-    public int getLowerZ() {
-        return compareCoordinates(false, firstCorner.getBlockZ(), secondCorner.getBlockZ());
-    }
-
-    public Location getFirstCorner() {
-        return this.firstCorner;
-    }
-
-    public Location getSecondCorner() {
-        return this.secondCorner;
-    }
-
-    @Override
-    public BasicType getType() {
-        return BasicType.REGION;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
-    }
-
-    @Override
-    public String toString() {
-        return this.name;
-    }
-
-    public static Region getOrCreate(String name) {
-        for (Region region : RegionUtils.getRegions()) {
-            if (region.getName() != null && region.getName().equalsIgnoreCase(name)) {
-                return region;
+    companion object {
+        fun getOrCreate(name: String): Region? {
+            for (region in RegionUtils.getRegions()) {
+                if (region!!.name != null && region!!.name.equals(name, ignoreCase = true)) {
+                    return region
+                }
             }
+            return Region(name)
         }
-
-        return new Region(name);
     }
-
 }

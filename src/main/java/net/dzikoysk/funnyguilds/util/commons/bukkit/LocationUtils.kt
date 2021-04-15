@@ -1,66 +1,52 @@
-package net.dzikoysk.funnyguilds.util.commons.bukkit;
+package net.dzikoysk.funnyguilds.util.commons.bukkit
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.entity.Player
 
-import java.util.List;
-
-public final class LocationUtils {
-
-    private LocationUtils() {}
-
-    public static double flatDistance(Location a, Location b) {
-        return Math.sqrt(Math.pow(b.getX() - a.getX(), 2) + Math.pow(b.getZ() - a.getZ(), 2));
+object LocationUtils {
+    fun flatDistance(a: Location, b: Location?): Double {
+        return Math.sqrt(Math.pow(b!!.x - a.x, 2.0) + Math.pow(b.z - a.z, 2.0))
     }
 
-    public static boolean checkWorld(Player player) {
-        List<String> blockedWorlds = FunnyGuilds.getInstance().getPluginConfiguration().blockedWorlds;
-        return blockedWorlds != null && blockedWorlds.size() > 0 && blockedWorlds.contains(player.getWorld().getName());
+    fun checkWorld(player: Player): Boolean {
+        val blockedWorlds: List<String> = FunnyGuilds.Companion.getInstance().getPluginConfiguration().blockedWorlds
+        return blockedWorlds != null && blockedWorlds.size > 0 && blockedWorlds.contains(player.world.name)
     }
 
-    public static Location parseLocation(String string) {
+    fun parseLocation(string: String?): Location? {
         if (string == null) {
-            return null;
+            return null
         }
-
-        String[] shs = string.split(",");
-
-        if (shs.length < 4) {
-            return null;
+        val shs = string.split(",".toRegex()).toTypedArray()
+        if (shs.size < 4) {
+            return null
         }
-
-        World world = Bukkit.getWorld(shs[0]);
-
+        var world = Bukkit.getWorld(shs[0])
         if (world == null) {
-            world = Bukkit.getWorlds().get(0);
+            world = Bukkit.getWorlds()[0]
         }
-
-        return new Location(world, Integer.parseInt(shs[1]), Integer.parseInt(shs[2]), Integer.parseInt(shs[3]));
+        return Location(world, shs[1].toInt().toDouble(), shs[2].toInt().toDouble(), shs[3].toInt().toDouble())
     }
 
-    public static boolean equals(Location location, Location to) {
-        return (location.getBlockX() == to.getBlockX() && location.getBlockY() == to.getBlockY() && location.getBlockZ() == to.getBlockZ());
+    fun equals(location: Location, to: Location): Boolean {
+        return location.blockX == to.blockX && location.blockY == to.blockY && location.blockZ == to.blockZ
     }
 
-    public static boolean equalsFlat(Location location, Location to) {
-        return (location.getBlockX() == to.getBlockX() && location.getBlockZ() == to.getBlockZ());
+    fun equalsFlat(location: Location, to: Location): Boolean {
+        return location.blockX == to.blockX && location.blockZ == to.blockZ
     }
 
-    public static String toString(Location location) {
-        if (location == null) {
-            return null;
-        }
-
-        return location.getWorld().getName() +
+    fun toString(location: Location?): String? {
+        return if (location == null) {
+            null
+        } else location.world!!.name +
                 "," +
-                location.getBlockX() +
+                location.blockX +
                 "," +
-                location.getBlockY() +
+                location.blockY +
                 "," +
-                location.getBlockZ();
+                location.blockZ
     }
-
 }

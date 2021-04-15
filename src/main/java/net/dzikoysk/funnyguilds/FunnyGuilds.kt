@@ -1,339 +1,637 @@
-package net.dzikoysk.funnyguilds;
+package net.dzikoysk.funnyguildsimport
 
-import net.dzikoysk.funnycommands.FunnyCommands;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.basic.rank.RankRecalculationTask;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.basic.user.UserUtils;
-import net.dzikoysk.funnyguilds.command.CommandsConfiguration;
-import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager;
-import net.dzikoysk.funnyguilds.data.DataModel;
-import net.dzikoysk.funnyguilds.data.DataPersistenceHandler;
-import net.dzikoysk.funnyguilds.data.InvitationPersistenceHandler;
-import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration;
-import net.dzikoysk.funnyguilds.data.database.Database;
-import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler;
-import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist;
-import net.dzikoysk.funnyguilds.element.tablist.TablistBroadcastHandler;
-import net.dzikoysk.funnyguilds.hook.PluginHook;
-import net.dzikoysk.funnyguilds.listener.*;
-import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerManager;
-import net.dzikoysk.funnyguilds.listener.region.*;
-import net.dzikoysk.funnyguilds.system.GuildValidationHandler;
-import net.dzikoysk.funnyguilds.util.commons.ChatUtils;
-import net.dzikoysk.funnyguilds.util.commons.ConfigHelper;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.MinecraftServerUtils;
-import net.dzikoysk.funnyguilds.util.metrics.MetricsCollector;
-import net.dzikoysk.funnyguilds.util.nms.DescriptionChanger;
-import net.dzikoysk.funnyguilds.util.nms.GuildEntityHelper;
-import net.dzikoysk.funnyguilds.util.nms.PacketExtension;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
-import org.panda_lang.utilities.commons.ClassUtils;
+import net.dzikoysk.funnycommands.FunnyCommands
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.FunnyGuildsLogger
+import net.dzikoysk.funnyguilds.FunnyGuildsVersion
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.basic.rank.RankRecalculationTask
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.data.DataModel
+import net.dzikoysk.funnyguilds.data.DataPersistenceHandler
+import net.dzikoysk.funnyguilds.data.InvitationPersistenceHandler
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration
+import net.dzikoysk.funnyguilds.data.database.Database
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist
+import net.dzikoysk.funnyguilds.element.tablist.TablistBroadcastHandler
+import net.dzikoysk.funnyguilds.hook.*
+import net.dzikoysk.funnyguilds.listener.*
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerManager
+import net.dzikoysk.funnyguilds.listener.region.*
+import net.dzikoysk.funnyguilds.system.GuildValidationHandler
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.util.commons.ConfigHelper
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MinecraftServerUtils
+import net.dzikoysk.funnyguilds.util.metrics.MetricsCollector
+import net.dzikoysk.funnyguilds.util.nms.DescriptionChanger
+import net.dzikoysk.funnyguilds.util.nms.GuildEntityHelper
+import net.dzikoysk.funnyguilds.util.nms.PacketExtension
+import org.bukkit.Bukkit
+import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitTask
+import org.panda_lang.utilities.commons.ClassUtils
+import java.io.*
 
-import java.io.File;
+net.dzikoysk.funnyguilds.data .flat.FlatDataModel
+import net.dzikoysk.funnyguilds.util.YamlWrapper
+import net.dzikoysk.funnyguilds.data.util.DeserializationUtils
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import net.dzikoysk.funnyguilds.basic.guild.RegionUtils
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.data.flat.FlatGuild
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import net.dzikoysk.funnyguilds.data.flat.FlatUser
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseFixAlliesRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdateRequest
+import net.dzikoysk.funnyguilds.data.flat.FlatPatcher
+import net.dzikoysk.funnyguilds.data.util.InvitationList.Invitation
+import net.dzikoysk.funnyguilds.data.util.InvitationList
+import com.google.common.collect.ImmutableList
+import java.util.stream.Collectors
+import net.dzikoysk.funnyguilds.data.util.InvitationList.InvitationType
+import net.dzikoysk.funnyguilds.data.util.ConfirmationList
+import net.dzikoysk.funnyguilds.basic.user.UserBan
+import org.diorite.cfg.annotations.CfgClass
+import org.diorite.cfg.annotations.defaults.CfgDelegateDefault
+import org.diorite.cfg.annotations.CfgComment
+import org.diorite.cfg.annotations.CfgExclude
+import net.dzikoysk.funnyguilds.util.Cooldown
+import java.text.SimpleDateFormat
+import org.diorite.cfg.annotations.CfgName
+import org.diorite.cfg.annotations.CfgStringStyle
+import org.diorite.cfg.annotations.CfgStringStyle.StringStyle
+import net.dzikoysk.funnyguilds.basic.guild.GuildRegex
+import org.diorite.cfg.annotations.CfgCollectionStyle
+import org.diorite.cfg.annotations.CfgCollectionStyle.CollectionStyle
+import java.time.LocalTime
+import com.google.common.collect.ImmutableMap
+import net.dzikoysk.funnyguilds.basic.rank.RankSystem
+import net.dzikoysk.funnyguilds.util.IntegerRange
+import net.dzikoysk.funnyguilds.element.notification.NotificationStyle
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarOptions
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.MySQL
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemUtils
+import net.dzikoysk.funnyguilds.basic.rank.RankUtils
+import java.lang.IndexOutOfBoundsException
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemBuilder
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MaterialUtils
+import kotlin.collections.MutableMap.MutableEntry
+import java.lang.NumberFormatException
+import java.util.EnumMap
+import java.time.format.DateTimeFormatter
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.Commands.AdminCommands
+import kotlin.jvm.JvmOverloads
+import net.dzikoysk.funnyguilds.data.database.element.SQLElement
+import net.dzikoysk.funnyguilds.data.database.element.SQLTable
+import net.dzikoysk.funnyguilds.data.database.element.SQLNamedStatement
+import net.dzikoysk.funnyguilds.data.database.Database
+import java.sql.PreparedStatement
+import java.sql.SQLException
+import java.sql.ResultSet
+import kotlin.Throws
+import com.zaxxer.hikari.HikariDataSource
+import net.dzikoysk.funnyguilds.data.database.element.SQLBasicUtils
+import net.dzikoysk.funnyguilds.data.database.SQLDataModel
+import net.dzikoysk.funnyguilds.data.database.DatabaseUser
+import net.dzikoysk.funnyguilds.data.database.DatabaseRegion
+import net.dzikoysk.funnyguilds.data.database.DatabaseGuild
+import kotlin.jvm.Volatile
+import java.lang.Runnable
+import net.dzikoysk.funnyguilds.concurrency.requests.DataSaveRequest
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEditHook
+import com.sk89q.worldedit.bukkit.BukkitWorld
+import com.sk89q.jnbt.NBTInputStream
+import java.util.zip.GZIPInputStream
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.session.PasteBuilder
+import com.sk89q.worldedit.function.operation.Operations
+import java.lang.InstantiationException
+import java.lang.RuntimeException
+import java.lang.IllegalAccessException
+import java.lang.reflect.InvocationTargetException
+import com.sk89q.worldedit.MaxChangedBlocksException
+import com.sk89q.worldedit.extent.Extent
+import java.lang.NoSuchMethodException
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.WorldEditException
+import com.sk89q.worldguard.protection.ApplicableRegionSet
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuardHook
+import java.lang.invoke.MethodHandles
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard6Hook
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin
+import com.sk89q.worldguard.protection.managers.RegionManager
+import com.sk89q.worldguard.protection.flags.StateFlag
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException
+import java.lang.IllegalArgumentException
+import com.sk89q.worldguard.protection.regions.ProtectedRegion
+import com.sk89q.worldguard.WorldGuard
+import net.milkbowl.vault.economy.Economy
+import net.milkbowl.vault.economy.EconomyResponse
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard7Hook
+import java.lang.ClassNotFoundException
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit6Hook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit7Hook
+import net.dzikoysk.funnyguilds.FunnyGuildsLogger
+import net.dzikoysk.funnyguilds.hook.LeaderHeadsHook.TopRankCollector
+import me.robin.leaderheads.datacollectors.DataCollector
+import me.robin.leaderheads.objects.BoardType
+import net.dzikoysk.funnyguilds.basic.rank.RankManager
+import net.dzikoysk.funnyguilds.hook.PlaceholderAPIHook.FunnyGuildsPlaceholder
+import me.clip.placeholderapi.expansion.PlaceholderExpansion
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables
+import codecrafter47.bungeetablistplus.api.bukkit.BungeeTabListPlusBukkitAPI
+import be.maximvdw.placeholderapi.PlaceholderReplaceEvent
+import net.dzikoysk.funnyguilds.util.nms.Reflections.InvalidMarker
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils.SafeInitializer
+import java.lang.Void
+import net.dzikoysk.funnyguilds.util.nms.PacketSender
+import net.dzikoysk.funnyguilds.util.nms.PacketCreator
+import java.lang.ThreadLocal
+import net.dzikoysk.funnyguilds.util.nms.EggTypeChanger
+import java.lang.SecurityException
+import net.dzikoysk.funnyguilds.util.nms.PacketExtension
+import io.netty.channel.ChannelHandler
+import io.netty.channel.ChannelDuplexHandler
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelPromise
+import net.dzikoysk.funnyguilds.concurrency.requests.WarUseRequest
+import io.netty.channel.ChannelPipeline
+import net.dzikoysk.funnyguilds.util.nms.BlockDataChanger
+import net.dzikoysk.funnyguilds.util.nms.GuildEntityHelper
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.util.commons.spigot.ItemComponentUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.NotePitch
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PingUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.SpaceUtils
+import org.panda_lang.utilities.commons.function.QuadFunction
+import java.text.DecimalFormat
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MinecraftServerUtils
+import java.lang.NoSuchFieldException
+import net.md_5.bungee.api.chat.BaseComponent
+import java.util.Collections
+import java.util.function.BinaryOperator
+import net.dzikoysk.funnyguilds.util.commons.MapUtil
+import java.util.Locale
+import org.diorite.cfg.system.TemplateCreator
+import org.apache.logging.log4j.core.Appender
+import org.apache.logging.log4j.core.appender.AbstractOutputStreamAppender
+import net.dzikoysk.funnyguilds.util.metrics.BStats
+import net.dzikoysk.funnyguilds.util.metrics.BStats.Country
+import net.dzikoysk.funnyguilds.util.metrics.MCStats
+import java.net.URLEncoder
+import net.dzikoysk.funnyguilds.util.telemetry.FunnyTelemetry
+import net.dzikoysk.funnyguilds.util.telemetry.PasteType
+import net.dzikoysk.funnyguilds.util.telemetry.FunnybinResponse
+import org.diorite.utils.network.DioriteURLUtils
+import net.dzikoysk.funnyguilds.util.FunnyBox
+import net.dzikoysk.funnyguilds.basic.rank.Rank
+import java.util.NavigableSet
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PermissionUtils
+import com.google.common.collect.Iterables
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.user.UserCache
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarProvider
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateUserRequest
+import com.google.common.cache.CacheBuilder
+import net.dzikoysk.funnyguilds.element.IndividualPrefix
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemoveGuildRequest
+import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause
+import net.dzikoysk.funnyguilds.event.FunnyEvent
+import net.dzikoysk.funnyguilds.event.rank.RankEvent
+import net.dzikoysk.funnyguilds.event.rank.RankChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.KillsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.DeathsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.PointsChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildBreakAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildSendAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAcceptAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildRevokeAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberJoinEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberKickEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberDeputyEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaderEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberAcceptInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberRevokeInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildMoveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildUnbanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildDeleteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEnlargeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreCreateEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBaseChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildLivesChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionEnterEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEntityExplodeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildExtendValidityEvent
+import net.dzikoysk.funnyguilds.system.ban.BanUtils
+import net.dzikoysk.funnyguilds.system.war.WarUtils
+import net.dzikoysk.funnyguilds.event.SimpleEventHandler
+import net.dzikoysk.funnyguilds.system.war.WarSystem
+import net.dzikoysk.funnyguilds.command.user.InfoCommand
+import net.dzikoysk.funnyguilds.system.war.WarListener
+import net.dzikoysk.funnyguilds.system.security.SecuritySystem
+import net.dzikoysk.funnycommands.resources.ValidationException
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityReach
+import net.dzikoysk.funnyguilds.system.security.SecurityUtils
+import net.dzikoysk.funnyguilds.system.security.SecurityType
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityFreeCam
+import net.dzikoysk.funnyguilds.system.protection.ProtectionSystem
+import net.dzikoysk.funnyguilds.system.validity.ValidityUtils
+import net.dzikoysk.funnycommands.stereotypes.FunnyComponent
+import net.dzikoysk.funnyguilds.command.CanManage
+import net.dzikoysk.funnyguilds.command.DefaultValidation
+import net.dzikoysk.funnyguilds.command.GuildValidation
+import net.dzikoysk.funnyguilds.command.IsOwner
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTaskBuilder
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTask
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.IsMember
+import java.util.concurrent.atomic.AtomicInteger
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddPlayerRequest
+import net.dzikoysk.funnyguilds.command.UserValidation
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemovePlayerRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdatePlayer
+import net.dzikoysk.funnyguilds.element.gui.GuiWindow
+import net.dzikoysk.funnyguilds.element.gui.GuiItem
+import net.dzikoysk.funnyguilds.command.user.CreateCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.user.DeleteCommand
+import net.dzikoysk.funnyguilds.command.user.ConfirmCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.ReloadRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.FunnybinRequest
+import net.dzikoysk.funnyguilds.command.admin.AdminUtils
+import net.dzikoysk.funnyguilds.command.admin.ProtectionCommand
+import java.lang.IllegalStateException
+import net.dzikoysk.funnyguilds.command.GuildBind
+import net.dzikoysk.funnyguilds.command.UserBind
+import net.dzikoysk.funnyguilds.command.OwnerValidator
+import net.dzikoysk.funnyguilds.command.MemberValidator
+import net.dzikoysk.funnyguilds.command.ManageValidator
+import net.dzikoysk.funnycommands.FunnyCommands
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration.CommandComponents
+import net.dzikoysk.funnyguilds.command.user.AllyCommand
+import net.dzikoysk.funnyguilds.command.user.BaseCommand
+import net.dzikoysk.funnyguilds.command.user.BreakCommand
+import net.dzikoysk.funnyguilds.command.user.DeputyCommand
+import net.dzikoysk.funnyguilds.command.user.EnlargeCommand
+import net.dzikoysk.funnyguilds.command.user.EscapeCommand
+import net.dzikoysk.funnyguilds.command.user.FunnyGuildsCommand
+import net.dzikoysk.funnyguilds.command.user.GuildCommand
+import net.dzikoysk.funnyguilds.command.user.InviteCommand
+import net.dzikoysk.funnyguilds.command.user.ItemsCommand
+import net.dzikoysk.funnyguilds.command.user.JoinCommand
+import net.dzikoysk.funnyguilds.command.user.KickCommand
+import net.dzikoysk.funnyguilds.command.user.LeaderCommand
+import net.dzikoysk.funnyguilds.command.user.LeaveCommand
+import net.dzikoysk.funnyguilds.command.user.PlayerInfoCommand
+import net.dzikoysk.funnyguilds.command.user.PvPCommand
+import net.dzikoysk.funnyguilds.command.user.RankingCommand
+import net.dzikoysk.funnyguilds.command.user.RankResetCommand
+import net.dzikoysk.funnyguilds.command.user.SetBaseCommand
+import net.dzikoysk.funnyguilds.command.user.TopCommand
+import net.dzikoysk.funnyguilds.command.user.ValidityCommand
+import net.dzikoysk.funnyguilds.command.user.WarCommand
+import net.dzikoysk.funnyguilds.command.user.TntCommand
+import net.dzikoysk.funnyguilds.command.admin.AddCommand
+import net.dzikoysk.funnyguilds.command.admin.BaseAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.BanCommand
+import net.dzikoysk.funnyguilds.command.admin.DeathsCommand
+import net.dzikoysk.funnyguilds.command.admin.DeleteAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.DeputyAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.GuildsEnabledCommand
+import net.dzikoysk.funnyguilds.command.admin.KickAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.KillsCommand
+import net.dzikoysk.funnyguilds.command.admin.LeaderAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.LivesCommand
+import net.dzikoysk.funnyguilds.command.admin.MainCommand
+import net.dzikoysk.funnyguilds.command.admin.MoveCommand
+import net.dzikoysk.funnyguilds.command.admin.NameCommand
+import net.dzikoysk.funnyguilds.command.admin.PointsCommand
+import net.dzikoysk.funnyguilds.command.admin.SpyCommand
+import net.dzikoysk.funnyguilds.command.admin.TagCommand
+import net.dzikoysk.funnyguilds.command.admin.TeleportCommand
+import net.dzikoysk.funnyguilds.command.admin.UnbanCommand
+import net.dzikoysk.funnyguilds.command.admin.ValidityAdminCommand
+import net.dzikoysk.funnyguilds.command.SettingsBind
+import net.dzikoysk.funnyguilds.command.MessagesBind
+import net.dzikoysk.funnycommands.resources.types.PlayerType
+import net.dzikoysk.funnyguilds.command.GuildsCompleter
+import net.dzikoysk.funnyguilds.command.MembersCompleter
+import net.dzikoysk.funnyguilds.command.FunnyGuildsExceptionHandler
+import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist
+import java.util.function.BiFunction
+import java.time.LocalDateTime
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.GuildDependentTablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.VariableParsingResult
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.TimeFormattedVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariablesParser
+import java.time.format.TextStyle
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.SimpleTablistVariable
+import net.dzikoysk.funnyguilds.util.IntegerRange.MissingFormatException
+import net.dzikoysk.funnyguilds.element.notification.NotificationUtil
+import java.text.MessageFormat
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.v1_8.BossBarProviderImpl
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.DefaultBossBarProvider
+import net.dzikoysk.funnyguilds.element.DummyManager
+import net.dzikoysk.funnyguilds.element.IndividualPrefixManager
+import net.dzikoysk.funnyguilds.listener.region.BlockPlace
+import org.bukkit.event.entity.EntityPlaceEvent
+import net.dzikoysk.funnyguilds.listener.region.GuildHeartProtectionHandler
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerRegistration
+import net.dzikoysk.funnyguilds.concurrency.requests.dummy.DummyGlobalUpdateUserRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateUserPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyRequest
+import net.dzikoysk.funnyguilds.util.commons.ConfigHelper
+import java.util.concurrent.ExecutorService
+import java.lang.InterruptedException
+import java.util.concurrent.Executors
+import net.dzikoysk.funnyguilds.FunnyGuildsVersion
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerManager
+import net.dzikoysk.funnyguilds.data.DataPersistenceHandler
+import net.dzikoysk.funnyguilds.data.InvitationPersistenceHandler
+import net.dzikoysk.funnyguilds.util.nms.DescriptionChanger
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration
+import net.dzikoysk.funnyguilds.util.metrics.MetricsCollector
+import net.dzikoysk.funnyguilds.system.GuildValidationHandler
+import net.dzikoysk.funnyguilds.element.tablist.TablistBroadcastHandler
+import net.dzikoysk.funnyguilds.basic.rank.RankRecalculationTask
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawn
+import java.lang.StackTraceElement
 
-public class FunnyGuilds extends JavaPlugin {
+class FunnyGuilds : JavaPlugin() {
+    val pluginConfigurationFile = File(dataFolder, "config.yml")
+    private val messageConfigurationFile = File(dataFolder, "messages.yml")
+    val pluginDataFolder = File(dataFolder, "data")
+    var version: FunnyGuildsVersion? = null
+        private set
+    private var funnyCommands: FunnyCommands? = null
+    var pluginConfiguration: PluginConfiguration? = null
+        private set
+    var messageConfiguration: MessageConfiguration? = null
+        private set
+    var concurrencyManager: ConcurrencyManager? = null
+        private set
+    var dynamicListenerManager: DynamicListenerManager? = null
+        private set
 
-    private static FunnyGuilds       funnyguilds;
-    private static FunnyGuildsLogger logger;
+    @Volatile
+    private var guildValidationTask: BukkitTask? = null
 
-    private final File pluginConfigurationFile  = new File(this.getDataFolder(), "config.yml");
-    private final File messageConfigurationFile = new File(this.getDataFolder(), "messages.yml");
-    private final File pluginDataFolderFile     = new File(this.getDataFolder(), "data");
+    @Volatile
+    private var tablistBroadcastTask: BukkitTask? = null
 
-    private FunnyGuildsVersion     version;
-    private FunnyCommands          funnyCommands;
-    private PluginConfiguration    pluginConfiguration;
-    private MessageConfiguration   messageConfiguration;
-    private ConcurrencyManager     concurrencyManager;
-    private DynamicListenerManager dynamicListenerManager;
-
-    private volatile BukkitTask guildValidationTask;
-    private volatile BukkitTask tablistBroadcastTask;
-    private volatile BukkitTask rankRecalculationTask;
-
-    private DataModel                    dataModel;
-    private DataPersistenceHandler       dataPersistenceHandler;
-    private InvitationPersistenceHandler invitationPersistenceHandler;
-
-    private boolean isDisabling;
-    private boolean forceDisabling;
-
-    @Override
-    public void onLoad() {
-        funnyguilds = this;
-        logger = new FunnyGuildsLogger(this);
-        this.version = new FunnyGuildsVersion(this);
-
+    @Volatile
+    private var rankRecalculationTask: BukkitTask? = null
+    var dataModel: DataModel? = null
+        private set
+    var dataPersistenceHandler: DataPersistenceHandler? = null
+        private set
+    var invitationPersistenceHandler: InvitationPersistenceHandler? = null
+        private set
+    var isDisabling = false
+        private set
+    private var forceDisabling = false
+    override fun onLoad() {
+        FunnyGuilds.Companion.funnyguilds = this
+        FunnyGuilds.Companion.logger = FunnyGuildsLogger(this)
+        version = FunnyGuildsVersion(this)
         try {
-            Class.forName("net.md_5.bungee.api.ChatColor");
+            Class.forName("net.md_5.bungee.api.ChatColor")
+        } catch (spigotNeeded: Exception) {
+            FunnyGuilds.Companion.logger.error("FunnyGuilds requires spigot to work, your server seems to be using something else")
+            FunnyGuilds.Companion.logger.error("If you think that is not true - contact plugin developers")
+            FunnyGuilds.Companion.logger.error("https://github.com/FunnyGuilds/FunnyGuilds")
+            shutdown("Spigot required for service not detected!")
+            return
         }
-        catch (Exception spigotNeeded) {
-            logger.error("FunnyGuilds requires spigot to work, your server seems to be using something else");
-            logger.error("If you think that is not true - contact plugin developers");
-            logger.error("https://github.com/FunnyGuilds/FunnyGuilds");
-
-            shutdown("Spigot required for service not detected!");
-            return;
+        if (!dataFolder.exists()) {
+            dataFolder.mkdir()
         }
-
-        if (! this.getDataFolder().exists()) {
-            this.getDataFolder().mkdir();
-        }
-
         try {
-            this.pluginConfiguration = ConfigHelper.loadConfig(this.pluginConfigurationFile, PluginConfiguration.class);
-            this.messageConfiguration = ConfigHelper.loadConfig(this.messageConfigurationFile, MessageConfiguration.class);
-
-            this.pluginConfiguration.load();
-            this.messageConfiguration.load();
+            pluginConfiguration = ConfigHelper.loadConfig(pluginConfigurationFile, PluginConfiguration::class.java)
+            messageConfiguration = ConfigHelper.loadConfig(messageConfigurationFile, MessageConfiguration::class.java)
+            pluginConfiguration!!.load()
+            messageConfiguration!!.load()
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.logger.error("Could not load plugin configuration", exception)
+            shutdown("Critical error has been encountered!")
+            return
         }
-        catch (Exception exception) {
-            logger.error("Could not load plugin configuration", exception);
-            shutdown("Critical error has been encountered!");
-            return;
-        }
-
-        DescriptionChanger descriptionChanger = new DescriptionChanger(super.getDescription());
-        descriptionChanger.rename(pluginConfiguration.pluginName);
-
-        this.concurrencyManager = new ConcurrencyManager(this, pluginConfiguration.concurrencyThreads);
-        this.concurrencyManager.printStatus();
-
-        CommandsConfiguration commandsConfiguration = new CommandsConfiguration();
-        this.funnyCommands = commandsConfiguration.createFunnyCommands(getServer(), this);
-
-        this.dynamicListenerManager = new DynamicListenerManager(this);
-        PluginHook.earlyInit();
+        val descriptionChanger = DescriptionChanger(super.getDescription())
+        descriptionChanger.rename(pluginConfiguration!!.pluginName)
+        concurrencyManager = ConcurrencyManager(this, pluginConfiguration!!.concurrencyThreads)
+        concurrencyManager!!.printStatus()
+        val commandsConfiguration = CommandsConfiguration()
+        funnyCommands = commandsConfiguration.createFunnyCommands(server, this)
+        dynamicListenerManager = DynamicListenerManager(this)
+        PluginHook.earlyInit()
     }
 
-    @Override
-    public void onEnable() {
-        funnyguilds = this;
-
-        if (this.forceDisabling) {
-            return;
+    override fun onEnable() {
+        FunnyGuilds.Companion.funnyguilds = this
+        if (forceDisabling) {
+            return
         }
-
         try {
-            this.dataModel = DataModel.create(this, this.pluginConfiguration.dataModel);
-            this.dataModel.load();
+            dataModel = DataModel.Companion.create(this, pluginConfiguration!!.dataModel)
+            dataModel!!.load()
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.logger.error("Could not load data from database", ex)
+            shutdown("Critical error has been encountered!")
+            return
         }
-        catch (Exception ex) {
-            logger.error("Could not load data from database", ex);
-            shutdown("Critical error has been encountered!");
-            return;
+        dataPersistenceHandler = DataPersistenceHandler(this)
+        dataPersistenceHandler!!.startHandler()
+        invitationPersistenceHandler = InvitationPersistenceHandler(this)
+        invitationPersistenceHandler!!.loadInvitations()
+        invitationPersistenceHandler!!.startHandler()
+        val collector = MetricsCollector(this)
+        collector.start()
+        guildValidationTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, GuildValidationHandler(), 100L, 20L)
+        tablistBroadcastTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, TablistBroadcastHandler(), 20L, pluginConfiguration!!.playerListUpdateInterval_)
+        rankRecalculationTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, RankRecalculationTask(), 20L, pluginConfiguration!!.rankingUpdateInterval_)
+        val pluginManager = Bukkit.getPluginManager()
+        pluginManager.registerEvents(GuiActionHandler(), this)
+        pluginManager.registerEvents(EntityDamage(), this)
+        pluginManager.registerEvents(EntityInteract(), this)
+        pluginManager.registerEvents(PlayerChat(), this)
+        pluginManager.registerEvents(PlayerDeath(), this)
+        pluginManager.registerEvents(PlayerJoin(this), this)
+        pluginManager.registerEvents(PlayerLogin(), this)
+        pluginManager.registerEvents(PlayerQuit(), this)
+        pluginManager.registerEvents(GuildHeartProtectionHandler(), this)
+        pluginManager.registerEvents(TntProtection(), this)
+        if (pluginConfiguration!!.regionsEnabled && pluginConfiguration!!.blockFlow) {
+            pluginManager.registerEvents(BlockFlow(), this)
         }
-
-        this.dataPersistenceHandler = new DataPersistenceHandler(this);
-        this.dataPersistenceHandler.startHandler();
-
-        this.invitationPersistenceHandler = new InvitationPersistenceHandler(this);
-        this.invitationPersistenceHandler.loadInvitations();
-        this.invitationPersistenceHandler.startHandler();
-
-        MetricsCollector collector = new MetricsCollector(this);
-        collector.start();
-
-        this.guildValidationTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, new GuildValidationHandler(), 100L, 20L);
-        this.tablistBroadcastTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, new TablistBroadcastHandler(), 20L, this.pluginConfiguration.playerListUpdateInterval_);
-        this.rankRecalculationTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, new RankRecalculationTask(), 20L, this.pluginConfiguration.rankingUpdateInterval_);
-
-        PluginManager pluginManager = Bukkit.getPluginManager();
-        pluginManager.registerEvents(new GuiActionHandler(), this);
-        pluginManager.registerEvents(new EntityDamage(), this);
-        pluginManager.registerEvents(new EntityInteract(), this);
-        pluginManager.registerEvents(new PlayerChat(), this);
-        pluginManager.registerEvents(new PlayerDeath(), this);
-        pluginManager.registerEvents(new PlayerJoin(this), this);
-        pluginManager.registerEvents(new PlayerLogin(), this);
-        pluginManager.registerEvents(new PlayerQuit(), this);
-        pluginManager.registerEvents(new GuildHeartProtectionHandler(), this);
-        pluginManager.registerEvents(new TntProtection(), this);
-
-        if (pluginConfiguration.regionsEnabled && pluginConfiguration.blockFlow) {
-            pluginManager.registerEvents(new BlockFlow(), this);
+        if (ClassUtils.forName<Any>("org.bukkit.event.entity.EntityPlaceEvent").isPresent) {
+            pluginManager.registerEvents(EntityPlace(), this)
+        } else {
+            FunnyGuilds.Companion.logger.warning("Cannot register EntityPlaceEvent listener on this version of server")
         }
-
-        if (ClassUtils.forName("org.bukkit.event.entity.EntityPlaceEvent").isPresent()) {
-            pluginManager.registerEvents(new EntityPlace(), this);
-        }
-        else {
-            logger.warning("Cannot register EntityPlaceEvent listener on this version of server");
-        }
-
-        this.dynamicListenerManager.registerDynamic(() -> pluginConfiguration.regionsEnabled,
-                new BlockBreak(),
-                new BlockIgnite(),
-                new BlockPlace(),
-                new BucketAction(),
-                new EntityExplode(),
-                new HangingBreak(),
-                new HangingPlace(),
-                new PlayerCommand(),
-                new PlayerInteract(),
-                new EntityProtect()
-        );
-
-        this.dynamicListenerManager.registerDynamic(() -> pluginConfiguration.regionsEnabled && pluginConfiguration.eventMove, new PlayerMove());
-        this.dynamicListenerManager.registerDynamic(() -> pluginConfiguration.regionsEnabled && pluginConfiguration.eventPhysics, new BlockPhysics());
-        this.dynamicListenerManager.registerDynamic(() -> pluginConfiguration.regionsEnabled && pluginConfiguration.respawnInBase, new PlayerRespawn());
-        this.dynamicListenerManager.reloadAll();
-        this.patch();
-
-        this.version.isNewAvailable(this.getServer().getConsoleSender(), true);
-        PluginHook.init();
-
+        dynamicListenerManager!!.registerDynamic(
+            { pluginConfiguration!!.regionsEnabled },
+            BlockBreak(),
+            BlockIgnite(),
+            BlockPlace(),
+            BucketAction(),
+            EntityExplode(),
+            HangingBreak(),
+            HangingPlace(),
+            PlayerCommand(),
+            PlayerInteract(),
+            EntityProtect()
+        )
+        dynamicListenerManager!!.registerDynamic({ pluginConfiguration!!.regionsEnabled && pluginConfiguration!!.eventMove }, PlayerMove())
+        dynamicListenerManager!!.registerDynamic({ pluginConfiguration!!.regionsEnabled && pluginConfiguration!!.eventPhysics }, BlockPhysics())
+        dynamicListenerManager!!.registerDynamic({ pluginConfiguration!!.regionsEnabled && pluginConfiguration!!.respawnInBase }, PlayerRespawn())
+        dynamicListenerManager!!.reloadAll()
+        patch()
+        version!!.isNewAvailable(server.consoleSender, true)
+        PluginHook.init()
         if (MinecraftServerUtils.getReloadCount() > 0) {
-            Bukkit.broadcast(ChatUtils.colored(messageConfiguration.reloadWarn), "funnyguilds.admin");
+            Bukkit.broadcast(ChatUtils.colored(messageConfiguration!!.reloadWarn)!!, "funnyguilds.admin")
         }
-
-        logger.info("~ Created by FunnyGuilds Team ~");
+        FunnyGuilds.Companion.logger.info("~ Created by FunnyGuilds Team ~")
     }
 
-    @Override
-    public void onDisable() {
-        if (this.forceDisabling) {
-            return;
+    override fun onDisable() {
+        if (forceDisabling) {
+            return
         }
-
-        this.isDisabling = true;
-
-        this.funnyCommands.dispose();
-        this.dynamicListenerManager.unregisterAll();
-        GuildEntityHelper.despawnGuildHearts();
-
-        this.guildValidationTask.cancel();
-        this.tablistBroadcastTask.cancel();
-        this.rankRecalculationTask.cancel();
-
-        for (User user : UserUtils.getUsers()) {
-            user.getBossBar().removeNotification();
+        isDisabling = true
+        funnyCommands!!.dispose()
+        dynamicListenerManager!!.unregisterAll()
+        GuildEntityHelper.despawnGuildHearts()
+        guildValidationTask!!.cancel()
+        tablistBroadcastTask!!.cancel()
+        rankRecalculationTask!!.cancel()
+        for (user in UserUtils.getUsers()) {
+            user.bossBar.removeNotification()
         }
-
-        this.dataModel.save(false);
-        this.dataPersistenceHandler.stopHandler();
-
-        this.invitationPersistenceHandler.saveInvitations();
-        this.invitationPersistenceHandler.stopHandler();
-
-        this.getServer().getScheduler().cancelTasks(this);
-        this.getConcurrencyManager().awaitTermination(this.pluginConfiguration.pluginTaskTerminationTimeout);
-
-        Database.getInstance().shutdown();
-
-        funnyguilds = null;
+        dataModel!!.save(false)
+        dataPersistenceHandler!!.stopHandler()
+        invitationPersistenceHandler!!.saveInvitations()
+        invitationPersistenceHandler!!.stopHandler()
+        server.scheduler.cancelTasks(this)
+        concurrencyManager!!.awaitTermination(pluginConfiguration!!.pluginTaskTerminationTimeout)
+        Database.Companion.getInstance()!!.shutdown()
+        FunnyGuilds.Companion.funnyguilds = null
     }
 
-    public void shutdown(String content) {
-        if (this.isDisabling() || this.forceDisabling) {
-            return;
+    fun shutdown(content: String) {
+        if (isDisabling || forceDisabling) {
+            return
         }
-
-        this.forceDisabling = true;
-        logger.warning("The FunnyGuilds is going to shut down! " + content);
-        this.getServer().getPluginManager().disablePlugin(this);
+        forceDisabling = true
+        FunnyGuilds.Companion.logger.warning("The FunnyGuilds is going to shut down! $content")
+        server.pluginManager.disablePlugin(this)
     }
 
-    private void patch() {
-        for (Player player : this.getServer().getOnlinePlayers()) {
-            this.getServer().getScheduler().runTask(this, () -> PacketExtension.registerPlayer(player));
-
-            User user = User.get(player);
-
-            if (user.getCache().getScoreboard() == null) {
-                if (pluginConfiguration.useSharedScoreboard) {
-                    user.getCache().setScoreboard(player.getScoreboard());
-                }
-                else {
-                    user.getCache().setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+    private fun patch() {
+        for (player in server.onlinePlayers) {
+            server.scheduler.runTask(this, Runnable { PacketExtension.registerPlayer(player) })
+            val user: User = User.Companion.get(player)
+            if (user.cache.scoreboard == null) {
+                if (pluginConfiguration!!.useSharedScoreboard) {
+                    user.cache.setScoreboard(player.scoreboard)
+                } else {
+                    user.cache.setScoreboard(Bukkit.getScoreboardManager()!!.newScoreboard)
                 }
             }
-
-            user.getCache().getDummy();
-
-            if (!pluginConfiguration.playerListEnable) {
-                continue;
+            user.cache.dummy
+            if (!pluginConfiguration!!.playerListEnable) {
+                continue
             }
-
-            AbstractTablist.createTablist(pluginConfiguration.playerList, pluginConfiguration.playerListHeader, pluginConfiguration.playerListFooter, pluginConfiguration.playerListPing, player);
+            AbstractTablist.Companion.createTablist(
+                pluginConfiguration!!.playerList,
+                pluginConfiguration!!.playerListHeader,
+                pluginConfiguration!!.playerListFooter,
+                pluginConfiguration!!.playerListPing,
+                player
+            )
         }
-
-        for (Guild guild : GuildUtils.getGuilds()) {
-            if (pluginConfiguration.createEntityType != null) {
-                GuildEntityHelper.spawnGuildHeart(guild);
+        for (guild in GuildUtils.getGuilds()) {
+            if (pluginConfiguration!!.createEntityType != null) {
+                GuildEntityHelper.spawnGuildHeart(guild)
             }
-
-            guild.updateRank();
+            guild!!.updateRank()
         }
     }
 
-    public boolean isDisabling() {
-        return this.isDisabling;
+    fun reloadPluginConfiguration() {
+        pluginConfiguration = ConfigHelper.loadConfig(pluginConfigurationFile, PluginConfiguration::class.java)
+        pluginConfiguration!!.load()
     }
 
-    public FunnyGuildsVersion getVersion() {
-        return this.version;
+    fun reloadMessageConfiguration() {
+        messageConfiguration = ConfigHelper.loadConfig(messageConfigurationFile, MessageConfiguration::class.java)
+        messageConfiguration!!.load()
     }
 
-    public File getPluginDataFolder() {
-        return this.pluginDataFolderFile;
+    companion object {
+        private val funnyguilds: FunnyGuilds? = null
+        private val logger: FunnyGuildsLogger? = null
+        val instance: FunnyGuilds
+            get() = FunnyGuilds.Companion.funnyguilds
+        val pluginLogger: FunnyGuildsLogger
+            get() = FunnyGuilds.Companion.logger
     }
-
-    public DataModel getDataModel() {
-        return this.dataModel;
-    }
-
-    public DataPersistenceHandler getDataPersistenceHandler() {
-        return this.dataPersistenceHandler;
-    }
-
-    public InvitationPersistenceHandler getInvitationPersistenceHandler() {
-        return this.invitationPersistenceHandler;
-    }
-
-    public PluginConfiguration getPluginConfiguration() {
-        return this.pluginConfiguration;
-    }
-
-    public File getPluginConfigurationFile() {
-        return this.pluginConfigurationFile;
-    }
-
-    public MessageConfiguration getMessageConfiguration() {
-        return this.messageConfiguration;
-    }
-
-    public ConcurrencyManager getConcurrencyManager() {
-        return this.concurrencyManager;
-    }
-
-    public DynamicListenerManager getDynamicListenerManager() {
-        return this.dynamicListenerManager;
-    }
-
-    public void reloadPluginConfiguration() {
-        this.pluginConfiguration = ConfigHelper.loadConfig(this.pluginConfigurationFile, PluginConfiguration.class);
-        this.pluginConfiguration.load();
-    }
-
-    public void reloadMessageConfiguration() {
-        this.messageConfiguration = ConfigHelper.loadConfig(this.messageConfigurationFile, MessageConfiguration.class);
-        this.messageConfiguration.load();
-    }
-
-    public static FunnyGuilds getInstance() {
-        return funnyguilds;
-    }
-
-    public static FunnyGuildsLogger getPluginLogger() {
-        return logger;
-    }
-
 }

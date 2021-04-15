@@ -1,5 +1,5 @@
-package net.dzikoysk.funnyguilds.system.security;
+package net.dzikoysk.funnyguilds.system.security
 
-enum SecurityType {
+internal enum class SecurityType {
     GUILD
 }

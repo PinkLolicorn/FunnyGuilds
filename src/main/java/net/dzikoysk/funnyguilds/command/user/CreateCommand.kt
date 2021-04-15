@@ -1,252 +1,584 @@
-package net.dzikoysk.funnyguilds.command.user;
+package net.dzikoysk.funnyguilds.command.userimport
 
-import net.dzikoysk.funnycommands.resources.ValidationException;
-import net.dzikoysk.funnycommands.stereotypes.FunnyCommand;
-import net.dzikoysk.funnycommands.stereotypes.FunnyComponent;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.basic.guild.Region;
-import net.dzikoysk.funnyguilds.basic.guild.RegionUtils;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildRequest;
-import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddGuildRequest;
-import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddPlayerRequest;
-import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateGuildRequest;
-import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration;
-import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause;
-import net.dzikoysk.funnyguilds.event.SimpleEventHandler;
-import net.dzikoysk.funnyguilds.event.guild.GuildPreCreateEvent;
-import net.dzikoysk.funnyguilds.hook.PluginHook;
-import net.dzikoysk.funnyguilds.hook.VaultHook;
-import net.dzikoysk.funnyguilds.util.FunnyBox;
-import net.dzikoysk.funnyguilds.util.IntegerRange;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemUtils;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils;
-import net.dzikoysk.funnyguilds.util.commons.bukkit.SpaceUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.WorldBorder;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.panda_lang.utilities.commons.text.Formatter;
+import net.dzikoysk.funnycommands.resources.ValidationException
+import net.dzikoysk.funnycommands.stereotypes.FunnyCommand
+import net.dzikoysk.funnycommands.stereotypes.FunnyComponent
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.*
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.command.DefaultValidation
+import net.dzikoysk.funnyguilds.command.user.CreateCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddPlayerRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateGuildRequest
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration
+import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause
+import net.dzikoysk.funnyguilds.event.SimpleEventHandler
+import net.dzikoysk.funnyguilds.event.guild.GuildPreCreateEvent
+import net.dzikoysk.funnyguilds.hook.*
+import net.dzikoysk.funnyguilds.util.FunnyBox
+import net.dzikoysk.funnyguilds.util.IntegerRange
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.SpaceUtils
+import org.apache.commons.lang3.StringUtils
+import org.bukkit.Bukkit
+import org.bukkit.Material
+import org.bukkit.entity.Player
+import org.panda_lang.utilities.commons.text.Formatter
 
-import java.util.List;
-
-import static net.dzikoysk.funnyguilds.command.DefaultValidation.when;
+net.dzikoysk.funnyguilds.data .flat.FlatDataModel
+import net.dzikoysk.funnyguilds.util.YamlWrapper
+import net.dzikoysk.funnyguilds.data.util.DeserializationUtils
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.util.commons.bukkit.LocationUtils
+import net.dzikoysk.funnyguilds.basic.user.UserUtils
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.data.flat.FlatGuild
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
+import net.dzikoysk.funnyguilds.data.flat.FlatUser
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseFixAlliesRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdateRequest
+import net.dzikoysk.funnyguilds.data.flat.FlatPatcher
+import net.dzikoysk.funnyguilds.data.util.InvitationList.Invitation
+import net.dzikoysk.funnyguilds.data.util.InvitationList
+import com.google.common.collect.ImmutableList
+import java.util.stream.Collectors
+import net.dzikoysk.funnyguilds.data.util.InvitationList.InvitationType
+import net.dzikoysk.funnyguilds.data.util.ConfirmationList
+import net.dzikoysk.funnyguilds.basic.user.UserBan
+import org.diorite.cfg.annotations.CfgClass
+import org.diorite.cfg.annotations.defaults.CfgDelegateDefault
+import org.diorite.cfg.annotations.CfgComment
+import org.diorite.cfg.annotations.CfgExclude
+import net.dzikoysk.funnyguilds.util.Cooldown
+import java.text.SimpleDateFormat
+import org.diorite.cfg.annotations.CfgName
+import org.diorite.cfg.annotations.CfgStringStyle
+import org.diorite.cfg.annotations.CfgStringStyle.StringStyle
+import org.diorite.cfg.annotations.CfgCollectionStyle
+import org.diorite.cfg.annotations.CfgCollectionStyle.CollectionStyle
+import java.time.LocalTime
+import com.google.common.collect.ImmutableMap
+import net.dzikoysk.funnyguilds.basic.rank.RankSystem
+import net.dzikoysk.funnyguilds.util.IntegerRange
+import net.dzikoysk.funnyguilds.element.notification.NotificationStyle
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarOptions
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.MySQL
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemUtils
+import net.dzikoysk.funnyguilds.basic.rank.RankUtils
+import java.lang.IndexOutOfBoundsException
+import net.dzikoysk.funnyguilds.util.commons.bukkit.ItemBuilder
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MaterialUtils
+import kotlin.collections.MutableMap.MutableEntry
+import java.lang.NumberFormatException
+import java.util.EnumMap
+import java.time.format.DateTimeFormatter
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration.Commands.AdminCommands
+import kotlin.jvm.JvmOverloads
+import net.dzikoysk.funnyguilds.data.database.element.SQLElement
+import net.dzikoysk.funnyguilds.data.database.element.SQLTable
+import net.dzikoysk.funnyguilds.data.database.element.SQLNamedStatement
+import net.dzikoysk.funnyguilds.data.database.Database
+import java.sql.PreparedStatement
+import java.sql.SQLException
+import java.sql.ResultSet
+import kotlin.Throws
+import com.zaxxer.hikari.HikariDataSource
+import net.dzikoysk.funnyguilds.data.database.element.SQLBasicUtils
+import net.dzikoysk.funnyguilds.data.database.SQLDataModel
+import net.dzikoysk.funnyguilds.data.database.DatabaseUser
+import net.dzikoysk.funnyguilds.data.database.DatabaseRegion
+import net.dzikoysk.funnyguilds.data.database.DatabaseGuild
+import kotlin.jvm.Volatile
+import java.lang.Runnable
+import net.dzikoysk.funnyguilds.concurrency.requests.DataSaveRequest
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEditHook
+import com.sk89q.worldedit.bukkit.BukkitWorld
+import com.sk89q.jnbt.NBTInputStream
+import java.util.zip.GZIPInputStream
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.session.PasteBuilder
+import com.sk89q.worldedit.function.operation.Operations
+import java.lang.InstantiationException
+import java.lang.RuntimeException
+import java.lang.IllegalAccessException
+import java.lang.reflect.InvocationTargetException
+import com.sk89q.worldedit.MaxChangedBlocksException
+import java.io.IOException
+import com.sk89q.worldedit.extent.Extent
+import java.lang.NoSuchMethodException
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.WorldEditException
+import com.sk89q.worldguard.protection.ApplicableRegionSet
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuardHook
+import java.lang.invoke.MethodHandles
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard6Hook
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin
+import com.sk89q.worldguard.protection.managers.RegionManager
+import com.sk89q.worldguard.protection.flags.StateFlag
+import com.sk89q.worldguard.protection.flags.registry.FlagRegistry
+import com.sk89q.worldguard.protection.flags.registry.FlagConflictException
+import java.lang.IllegalArgumentException
+import com.sk89q.worldguard.protection.regions.ProtectedRegion
+import com.sk89q.worldguard.WorldGuard
+import net.milkbowl.vault.economy.Economy
+import net.milkbowl.vault.economy.EconomyResponse
+import net.dzikoysk.funnyguilds.hook.worldguard.WorldGuard7Hook
+import java.lang.ClassNotFoundException
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit6Hook
+import net.dzikoysk.funnyguilds.hook.worldedit.WorldEdit7Hook
+import net.dzikoysk.funnyguilds.FunnyGuildsLogger
+import net.dzikoysk.funnyguilds.hook.LeaderHeadsHook.TopRankCollector
+import me.robin.leaderheads.datacollectors.DataCollector
+import me.robin.leaderheads.objects.BoardType
+import net.dzikoysk.funnyguilds.basic.rank.RankManager
+import net.dzikoysk.funnyguilds.hook.PlaceholderAPIHook.FunnyGuildsPlaceholder
+import me.clip.placeholderapi.expansion.PlaceholderExpansion
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables
+import codecrafter47.bungeetablistplus.api.bukkit.BungeeTabListPlusBukkitAPI
+import be.maximvdw.placeholderapi.PlaceholderReplaceEvent
+import net.dzikoysk.funnyguilds.util.nms.Reflections.InvalidMarker
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils
+import net.dzikoysk.funnyguilds.util.commons.SafeUtils.SafeInitializer
+import java.lang.Void
+import net.dzikoysk.funnyguilds.util.nms.PacketSender
+import net.dzikoysk.funnyguilds.util.nms.PacketCreator
+import java.lang.ThreadLocal
+import net.dzikoysk.funnyguilds.util.nms.EggTypeChanger
+import java.lang.SecurityException
+import net.dzikoysk.funnyguilds.util.nms.PacketExtension
+import io.netty.channel.ChannelHandler
+import io.netty.channel.ChannelDuplexHandler
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelPromise
+import net.dzikoysk.funnyguilds.concurrency.requests.WarUseRequest
+import io.netty.channel.ChannelPipeline
+import net.dzikoysk.funnyguilds.util.nms.BlockDataChanger
+import net.dzikoysk.funnyguilds.util.nms.GuildEntityHelper
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.util.commons.spigot.ItemComponentUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.NotePitch
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PingUtils
+import net.dzikoysk.funnyguilds.util.commons.bukkit.SpaceUtils
+import org.panda_lang.utilities.commons.function.QuadFunction
+import java.text.DecimalFormat
+import net.dzikoysk.funnyguilds.util.commons.bukkit.MinecraftServerUtils
+import java.lang.NoSuchFieldException
+import net.md_5.bungee.api.chat.BaseComponent
+import java.io.FileNotFoundException
+import java.io.ByteArrayOutputStream
+import java.io.Closeable
+import java.util.Collections
+import java.util.function.BinaryOperator
+import net.dzikoysk.funnyguilds.util.commons.MapUtil
+import java.util.Locale
+import org.diorite.cfg.system.TemplateCreator
+import org.apache.logging.log4j.core.Appender
+import org.apache.logging.log4j.core.appender.AbstractOutputStreamAppender
+import net.dzikoysk.funnyguilds.util.metrics.BStats
+import net.dzikoysk.funnyguilds.util.metrics.BStats.Country
+import java.io.DataOutputStream
+import net.dzikoysk.funnyguilds.util.metrics.MCStats
+import java.io.BufferedReader
+import java.io.UnsupportedEncodingException
+import java.net.URLEncoder
+import net.dzikoysk.funnyguilds.util.telemetry.FunnyTelemetry
+import net.dzikoysk.funnyguilds.util.telemetry.PasteType
+import net.dzikoysk.funnyguilds.util.telemetry.FunnybinResponse
+import org.diorite.utils.network.DioriteURLUtils
+import net.dzikoysk.funnyguilds.util.FunnyBox
+import net.dzikoysk.funnyguilds.basic.rank.Rank
+import java.util.NavigableSet
+import net.dzikoysk.funnyguilds.util.commons.bukkit.PermissionUtils
+import com.google.common.collect.Iterables
+import net.dzikoysk.funnyguilds.basic.AbstractBasic
+import net.dzikoysk.funnyguilds.basic.user.UserCache
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.BossBarProvider
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateUserRequest
+import com.google.common.cache.CacheBuilder
+import net.dzikoysk.funnyguilds.element.IndividualPrefix
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemoveGuildRequest
+import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause
+import net.dzikoysk.funnyguilds.event.FunnyEvent
+import net.dzikoysk.funnyguilds.event.rank.RankEvent
+import net.dzikoysk.funnyguilds.event.rank.RankChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.KillsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.DeathsChangeEvent
+import net.dzikoysk.funnyguilds.event.rank.PointsChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildBreakAllyEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildSendAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildAcceptAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.ally.GuildRevokeAllyInvitationEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberJoinEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberKickEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberDeputyEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberLeaderEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberAcceptInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.member.GuildMemberRevokeInviteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildMoveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildUnbanEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildDeleteEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEnlargeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreCreateEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreRenameEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildBaseChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildLivesChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionEnterEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildRegionLeaveEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildPreTagChangeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildEntityExplodeEvent
+import net.dzikoysk.funnyguilds.event.guild.GuildExtendValidityEvent
+import net.dzikoysk.funnyguilds.system.ban.BanUtils
+import net.dzikoysk.funnyguilds.system.war.WarUtils
+import net.dzikoysk.funnyguilds.event.SimpleEventHandler
+import net.dzikoysk.funnyguilds.system.war.WarSystem
+import net.dzikoysk.funnyguilds.command.user.InfoCommand
+import net.dzikoysk.funnyguilds.system.war.WarListener
+import net.dzikoysk.funnyguilds.system.security.SecuritySystem
+import net.dzikoysk.funnycommands.resources.ValidationException
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityReach
+import net.dzikoysk.funnyguilds.system.security.SecurityUtils
+import net.dzikoysk.funnyguilds.system.security.SecurityType
+import net.dzikoysk.funnyguilds.system.security.cheat.SecurityFreeCam
+import net.dzikoysk.funnyguilds.system.protection.ProtectionSystem
+import net.dzikoysk.funnyguilds.system.validity.ValidityUtils
+import net.dzikoysk.funnycommands.stereotypes.FunnyComponent
+import net.dzikoysk.funnyguilds.command.CanManage
+import net.dzikoysk.funnyguilds.command.DefaultValidation
+import net.dzikoysk.funnyguilds.command.GuildValidation
+import net.dzikoysk.funnyguilds.command.IsOwner
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTaskBuilder
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyTask
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.IsMember
+import java.util.concurrent.atomic.AtomicInteger
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddPlayerRequest
+import net.dzikoysk.funnyguilds.command.UserValidation
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalRemovePlayerRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalUpdatePlayer
+import net.dzikoysk.funnyguilds.element.gui.GuiWindow
+import net.dzikoysk.funnyguilds.element.gui.GuiItem
+import net.dzikoysk.funnyguilds.command.user.CreateCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.rank.RankUpdateGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.prefix.PrefixGlobalAddGuildRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildRequest
+import net.dzikoysk.funnyguilds.command.user.DeleteCommand
+import net.dzikoysk.funnyguilds.command.user.ConfirmCommand
+import net.dzikoysk.funnyguilds.concurrency.requests.ReloadRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.FunnybinRequest
+import net.dzikoysk.funnyguilds.command.admin.AdminUtils
+import net.dzikoysk.funnyguilds.command.admin.ProtectionCommand
+import java.lang.IllegalStateException
+import net.dzikoysk.funnyguilds.command.GuildBind
+import net.dzikoysk.funnyguilds.command.UserBind
+import net.dzikoysk.funnyguilds.command.OwnerValidator
+import net.dzikoysk.funnyguilds.command.MemberValidator
+import net.dzikoysk.funnyguilds.command.ManageValidator
+import net.dzikoysk.funnycommands.FunnyCommands
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration.CommandComponents
+import net.dzikoysk.funnyguilds.command.user.AllyCommand
+import net.dzikoysk.funnyguilds.command.user.BaseCommand
+import net.dzikoysk.funnyguilds.command.user.BreakCommand
+import net.dzikoysk.funnyguilds.command.user.DeputyCommand
+import net.dzikoysk.funnyguilds.command.user.EnlargeCommand
+import net.dzikoysk.funnyguilds.command.user.EscapeCommand
+import net.dzikoysk.funnyguilds.command.user.FunnyGuildsCommand
+import net.dzikoysk.funnyguilds.command.user.GuildCommand
+import net.dzikoysk.funnyguilds.command.user.InviteCommand
+import net.dzikoysk.funnyguilds.command.user.ItemsCommand
+import net.dzikoysk.funnyguilds.command.user.JoinCommand
+import net.dzikoysk.funnyguilds.command.user.KickCommand
+import net.dzikoysk.funnyguilds.command.user.LeaderCommand
+import net.dzikoysk.funnyguilds.command.user.LeaveCommand
+import net.dzikoysk.funnyguilds.command.user.PlayerInfoCommand
+import net.dzikoysk.funnyguilds.command.user.PvPCommand
+import net.dzikoysk.funnyguilds.command.user.RankingCommand
+import net.dzikoysk.funnyguilds.command.user.RankResetCommand
+import net.dzikoysk.funnyguilds.command.user.SetBaseCommand
+import net.dzikoysk.funnyguilds.command.user.TopCommand
+import net.dzikoysk.funnyguilds.command.user.ValidityCommand
+import net.dzikoysk.funnyguilds.command.user.WarCommand
+import net.dzikoysk.funnyguilds.command.user.TntCommand
+import net.dzikoysk.funnyguilds.command.admin.AddCommand
+import net.dzikoysk.funnyguilds.command.admin.BaseAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.BanCommand
+import net.dzikoysk.funnyguilds.command.admin.DeathsCommand
+import net.dzikoysk.funnyguilds.command.admin.DeleteAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.DeputyAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.GuildsEnabledCommand
+import net.dzikoysk.funnyguilds.command.admin.KickAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.KillsCommand
+import net.dzikoysk.funnyguilds.command.admin.LeaderAdminCommand
+import net.dzikoysk.funnyguilds.command.admin.LivesCommand
+import net.dzikoysk.funnyguilds.command.admin.MainCommand
+import net.dzikoysk.funnyguilds.command.admin.MoveCommand
+import net.dzikoysk.funnyguilds.command.admin.NameCommand
+import net.dzikoysk.funnyguilds.command.admin.PointsCommand
+import net.dzikoysk.funnyguilds.command.admin.SpyCommand
+import net.dzikoysk.funnyguilds.command.admin.TagCommand
+import net.dzikoysk.funnyguilds.command.admin.TeleportCommand
+import net.dzikoysk.funnyguilds.command.admin.UnbanCommand
+import net.dzikoysk.funnyguilds.command.admin.ValidityAdminCommand
+import net.dzikoysk.funnyguilds.command.SettingsBind
+import net.dzikoysk.funnyguilds.command.MessagesBind
+import net.dzikoysk.funnycommands.resources.types.PlayerType
+import net.dzikoysk.funnyguilds.command.GuildsCompleter
+import net.dzikoysk.funnyguilds.command.MembersCompleter
+import net.dzikoysk.funnyguilds.command.FunnyGuildsExceptionHandler
+import net.dzikoysk.funnyguilds.element.tablist.AbstractTablist
+import java.util.function.BiFunction
+import java.time.LocalDateTime
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.GuildDependentTablistVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.VariableParsingResult
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.TimeFormattedVariable
+import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariablesParser
+import java.time.format.TextStyle
+import net.dzikoysk.funnyguilds.element.tablist.variable.impl.SimpleTablistVariable
+import net.dzikoysk.funnyguilds.util.IntegerRange.MissingFormatException
+import net.dzikoysk.funnyguilds.element.notification.NotificationUtil
+import java.text.MessageFormat
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.v1_8.BossBarProviderImpl
+import net.dzikoysk.funnyguilds.element.notification.bossbar.provider.DefaultBossBarProvider
+import net.dzikoysk.funnyguilds.element.DummyManager
+import net.dzikoysk.funnyguilds.element.IndividualPrefixManager
+import net.dzikoysk.funnyguilds.listener.region.BlockPlace
+import org.bukkit.event.entity.EntityPlaceEvent
+import net.dzikoysk.funnyguilds.listener.region.GuildHeartProtectionHandler
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerRegistration
+import net.dzikoysk.funnyguilds.concurrency.requests.dummy.DummyGlobalUpdateUserRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateGuildPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.requests.database.DatabaseUpdateUserPointsRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyRequest
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyExceptionHandler
+import net.dzikoysk.funnyguilds.concurrency.util.DefaultConcurrencyRequest
+import net.dzikoysk.funnyguilds.util.commons.ConfigHelper
+import java.util.concurrent.ExecutorService
+import java.lang.InterruptedException
+import java.util.concurrent.Executors
+import net.dzikoysk.funnyguilds.FunnyGuildsVersion
+import net.dzikoysk.funnyguilds.listener.dynamic.DynamicListenerManager
+import net.dzikoysk.funnyguilds.data.DataPersistenceHandler
+import net.dzikoysk.funnyguilds.data.InvitationPersistenceHandler
+import net.dzikoysk.funnyguilds.util.nms.DescriptionChanger
+import net.dzikoysk.funnyguilds.command.CommandsConfiguration
+import net.dzikoysk.funnyguilds.util.metrics.MetricsCollector
+import net.dzikoysk.funnyguilds.system.GuildValidationHandler
+import net.dzikoysk.funnyguilds.element.tablist.TablistBroadcastHandler
+import net.dzikoysk.funnyguilds.basic.rank.RankRecalculationTask
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawn
+import java.lang.StackTraceElement
 
 @FunnyComponent
-public final class CreateCommand {
-
-    private static final int SKY_LIMIT = 256;
-
+class CreateCommand {
     @FunnyCommand(
-        name = "${user.create.name}",
-        description = "${user.create.description}",
-        aliases = "${user.create.aliases}",
+        name = "\${user.create.name}",
+        description = "\${user.create.description}",
+        aliases = ["\${user.create.aliases}"],
         permission = "funnyguilds.create",
         acceptsExceeded = true,
         playerOnly = true
     )
-    public void execute(PluginConfiguration config, MessageConfiguration messages, Player player, User user, String[] args) {
-        when (!config.guildsEnabled, messages.adminGuildsDisabled);
-        when (LocationUtils.checkWorld(player), messages.blockedWorld);
-        when (user.hasGuild(), messages.generalHasGuild);
-
-        if (args.length != 2) {
-            when (args.length == 0, messages.generalNoTagGiven);
-            when (args.length == 1, messages.generalNoNameGiven);
-
-            throw new ValidationException(messages.createMore);
+    fun execute(config: PluginConfiguration, messages: MessageConfiguration, player: Player, user: User, args: Array<String>) {
+        DefaultValidation.`when`(!config.guildsEnabled, messages.adminGuildsDisabled)
+        DefaultValidation.`when`(LocationUtils.checkWorld(player), messages.blockedWorld)
+        DefaultValidation.`when`(user.hasGuild(), messages.generalHasGuild)
+        if (args.size != 2) {
+            DefaultValidation.`when`(args.size == 0, messages.generalNoTagGiven)
+            DefaultValidation.`when`(args.size == 1, messages.generalNoNameGiven)
+            throw ValidationException(messages.createMore)
         }
-
-        String tag = args[0];
-
+        var tag = args[0]
         if (!config.guildTagKeepCase) {
-            tag = config.guildTagUppercase ? tag.toUpperCase() : tag.toLowerCase();
+            tag = if (config.guildTagUppercase) tag.toUpperCase() else tag.toLowerCase()
         }
-        
-        String name = args[1];
-        Location guildLocation = player.getLocation().getBlock().getLocation();
-
-        when (tag.length() > config.createTagLength, messages.createTagLength.replace("{LENGTH}", Integer.toString(config.createTagLength)));
-        when (tag.length() < config.createTagMinLength, messages.createTagMinLength.replace("{LENGTH}", Integer.toString(config.createTagMinLength)));
-        when (name.length() > config.createNameLength, messages.createNameLength.replace("{LENGTH}", Integer.toString(config.createNameLength)));
-        when (name.length() < config.createNameMinLength, messages.createNameMinLength.replace("{LENGTH}", Integer.toString(config.createNameMinLength)));
-        when (!tag.matches(config.tagRegex.getPattern()), messages.createOLTag);
-        when (!name.matches(config.nameRegex.getPattern()), messages.createOLName);
-        when (GuildUtils.nameExists(name), messages.createNameExists);
-        when (GuildUtils.tagExists(tag), messages.createTagExists);
-        when (config.regionsEnabled && RegionUtils.isIn(guildLocation), messages.createIsNear);
-        when (config.regionsEnabled && RegionUtils.isNear(guildLocation), messages.createIsNear);
-
+        val name = args[1]
+        val guildLocation = player.location.block.location
+        DefaultValidation.`when`(tag.length > config.createTagLength, messages.createTagLength.replace("{LENGTH}", Integer.toString(config.createTagLength)))
+        DefaultValidation.`when`(tag.length < config.createTagMinLength, messages.createTagMinLength.replace("{LENGTH}", Integer.toString(config.createTagMinLength)))
+        DefaultValidation.`when`(name.length > config.createNameLength, messages.createNameLength.replace("{LENGTH}", Integer.toString(config.createNameLength)))
+        DefaultValidation.`when`(name.length < config.createNameMinLength, messages.createNameMinLength.replace("{LENGTH}", Integer.toString(config.createNameMinLength)))
+        DefaultValidation.`when`(!tag.matches(config.tagRegex.pattern), messages.createOLTag)
+        DefaultValidation.`when`(!name.matches(config.nameRegex.pattern), messages.createOLName)
+        DefaultValidation.`when`(GuildUtils.nameExists(name), messages.createNameExists)
+        DefaultValidation.`when`(GuildUtils.tagExists(tag), messages.createTagExists)
+        DefaultValidation.`when`(config.regionsEnabled && RegionUtils.isIn(guildLocation), messages.createIsNear)
+        DefaultValidation.`when`(config.regionsEnabled && RegionUtils.isNear(guildLocation), messages.createIsNear)
         if (config.checkForRestrictedGuildNames) {
-            when (!GuildUtils.isNameValid(name), messages.restrictedGuildName);
-            when (!GuildUtils.isTagValid(tag), messages.restrictedGuildTag);
+            DefaultValidation.`when`(!GuildUtils.isNameValid(name), messages.restrictedGuildName)
+            DefaultValidation.`when`(!GuildUtils.isTagValid(tag), messages.restrictedGuildTag)
         }
-
         if (config.regionsEnabled) {
             if (config.createCenterY != 0) {
-                guildLocation.setY(config.createCenterY);
+                guildLocation.y = config.createCenterY.toDouble()
             }
-
-            if (config.createEntityType != null && guildLocation.getBlockY() < (SKY_LIMIT - 2)) {
-                guildLocation.setY(guildLocation.getBlockY() + 2);
+            if (config.createEntityType != null && guildLocation.blockY < CreateCommand.Companion.SKY_LIMIT - 2) {
+                guildLocation.y = (guildLocation.blockY + 2).toDouble()
             }
-    
-            int distance = config.regionSize + config.createDistance;
-    
+            var distance = config.regionSize + config.createDistance
             if (config.enlargeItems != null) {
-                distance += config.enlargeItems.size() * config.enlargeSize;
+                distance += config.enlargeItems!!.size * config.enlargeSize
             }
-    
-            when (distance > LocationUtils.flatDistance(player.getWorld().getSpawnLocation(), guildLocation), messages.createSpawn.replace("{DISTANCE}", Integer.toString(distance)));
+            DefaultValidation.`when`(distance > LocationUtils.flatDistance(player.world.spawnLocation, guildLocation), messages.createSpawn.replace("{DISTANCE}", Integer.toString(distance)))
         }
-
         if (config.rankCreateEnable) {
-            int requiredRank = player.hasPermission("funnyguilds.vip.rank") ? config.rankCreateVip : config.rankCreate;
-            int points = user.getRank().getPoints();
-
+            val requiredRank = if (player.hasPermission("funnyguilds.vip.rank")) config.rankCreateVip else config.rankCreate
+            val points = user.rank.points
             if (points < requiredRank) {
-                String msg = messages.createRank;
-                
-                msg = StringUtils.replace(msg, "{REQUIRED-FORMAT}", IntegerRange.inRangeToString(requiredRank, config.pointsFormat).replace("{POINTS}", "{REQUIRED}"));
-                msg = StringUtils.replace(msg, "{REQUIRED}", String.valueOf(requiredRank));
-                msg = StringUtils.replace(msg, "{POINTS-FORMAT}", IntegerRange.inRangeToString(points, config.pointsFormat));
-                msg = StringUtils.replace(msg, "{POINTS}", String.valueOf(points));
-                
-                player.sendMessage(msg);
-                return;
+                var msg = messages.createRank
+                msg = StringUtils.replace(msg, "{REQUIRED-FORMAT}", IntegerRange.Companion.inRangeToString<String?>(requiredRank, config.pointsFormat).replace("{POINTS}", "{REQUIRED}"))
+                msg = StringUtils.replace(msg, "{REQUIRED}", requiredRank.toString())
+                msg = StringUtils.replace(msg, "{POINTS-FORMAT}", IntegerRange.Companion.inRangeToString<String?>(points, config.pointsFormat))
+                msg = StringUtils.replace(msg, "{POINTS}", points.toString())
+                player.sendMessage(msg)
+                return
             }
         }
-
-        List<ItemStack> requiredItems = player.hasPermission("funnyguilds.vip.items") ? config.createItemsVip : config.createItems;
-        int requiredExperience = player.hasPermission("funnyguilds.vip.items") ? config.requiredExperienceVip : config.requiredExperience;
-        double requiredMoney = player.hasPermission("funnyguilds.vip.items") ? config.requiredMoneyVip : config.requiredMoney;
-
-        if (player.getTotalExperience() < requiredExperience) {
-            String msg = messages.createExperience;
-            msg = StringUtils.replace(msg, "{EXP}", String.valueOf(requiredExperience));
-            player.sendMessage(msg);
-            return;
+        val requiredItems = if (player.hasPermission("funnyguilds.vip.items")) config.createItemsVip else config.createItems
+        val requiredExperience = if (player.hasPermission("funnyguilds.vip.items")) config.requiredExperienceVip else config.requiredExperience
+        val requiredMoney = if (player.hasPermission("funnyguilds.vip.items")) config.requiredMoneyVip else config.requiredMoney
+        if (player.totalExperience < requiredExperience) {
+            var msg = messages.createExperience
+            msg = StringUtils.replace(msg, "{EXP}", requiredExperience.toString())
+            player.sendMessage(msg)
+            return
         }
-
         if (VaultHook.isEconomyHooked() && !VaultHook.canAfford(player, requiredMoney)) {
-            String notEnoughMoneyMessage = messages.createMoney;
-            notEnoughMoneyMessage = StringUtils.replace(notEnoughMoneyMessage, "{MONEY}", Double.toString(requiredMoney));
-            player.sendMessage(notEnoughMoneyMessage);
-            return;
+            var notEnoughMoneyMessage = messages.createMoney
+            notEnoughMoneyMessage = StringUtils.replace(notEnoughMoneyMessage, "{MONEY}", java.lang.Double.toString(requiredMoney))
+            player.sendMessage(notEnoughMoneyMessage)
+            return
         }
-
-        if (! ItemUtils.playerHasEnoughItems(player, requiredItems)) {
-            return;
+        if (!ItemUtils.playerHasEnoughItems(player, requiredItems)) {
+            return
         }
-
-        Guild guild = new Guild(name);
-        guild.setTag(tag);
-        guild.setOwner(user);
-        guild.setLives(config.warLives);
-        guild.setBorn(System.currentTimeMillis());
-        guild.setValidity(System.currentTimeMillis() + config.validityStart);
-        guild.setAttacked(System.currentTimeMillis() - config.warWait + config.warProtection);
-        guild.setPvP(config.damageGuild);
-        guild.setHome(guildLocation);
-
+        val guild = Guild(name)
+        guild.tag = tag
+        guild.owner = user
+        guild.lives = config.warLives
+        guild.born = System.currentTimeMillis()
+        guild.validity = System.currentTimeMillis() + config.validityStart
+        guild.attacked = System.currentTimeMillis() - config.warWait + config.warProtection
+        guild.pvP = config.damageGuild
+        guild.home = guildLocation
         if (config.regionsEnabled) {
-            Region region = new Region(guild, guildLocation, config.regionSize);
-
-            WorldBorder border = player.getWorld().getWorldBorder();
-            double radius = border.getSize() / 2;
-            FunnyBox bbox = FunnyBox.of(border.getCenter().toVector(), radius - config.createMinDistanceFromBorder, 256, radius - config.createMinDistanceFromBorder);
-            FunnyBox gbox = FunnyBox.of(region.getFirstCorner(), region.getSecondCorner());
+            val region = Region(guild, guildLocation, config.regionSize)
+            val border = player.world.worldBorder
+            val radius = border.size / 2
+            val bbox: FunnyBox = FunnyBox.Companion.of(border.center.toVector(), radius - config.createMinDistanceFromBorder, 256.0, radius - config.createMinDistanceFromBorder)
+            val gbox: FunnyBox = FunnyBox.Companion.of(region.firstCorner, region.secondCorner)
 
             // border box does not contain guild box
             if (!bbox.contains(gbox)) {
-                String notEnoughDistanceMessage = messages.createNotEnoughDistanceFromBorder;
-                notEnoughDistanceMessage = StringUtils.replace(notEnoughDistanceMessage, "{BORDER-MIN-DISTANCE}", Double.toString(config.createMinDistanceFromBorder));
-                player.sendMessage(notEnoughDistanceMessage);
-                return;
+                var notEnoughDistanceMessage = messages.createNotEnoughDistanceFromBorder
+                notEnoughDistanceMessage = StringUtils.replace(notEnoughDistanceMessage, "{BORDER-MIN-DISTANCE}", java.lang.Double.toString(config.createMinDistanceFromBorder))
+                player.sendMessage(notEnoughDistanceMessage)
+                return
             }
-
-            guild.setRegion(region);
+            guild.region = region
         }
-
-        if (!SimpleEventHandler.handle(new GuildPreCreateEvent(EventCause.USER, user, guild))) {
-            return;
+        if (!SimpleEventHandler.handle(GuildPreCreateEvent(EventCause.USER, user, guild))) {
+            return
         }
-
-        player.getInventory().removeItem(ItemUtils.toArray(requiredItems));
-        player.setTotalExperience(player.getTotalExperience() - requiredExperience);
-
+        player.inventory.removeItem(*ItemUtils.toArray(requiredItems))
+        player.totalExperience = player.totalExperience - requiredExperience
         if (VaultHook.isEconomyHooked()) {
-            VaultHook.withdrawFromPlayerBank(player, requiredMoney);
+            VaultHook.withdrawFromPlayerBank(player, requiredMoney)
         }
-        
         if (config.regionsEnabled) {
             if (config.pasteSchematicOnCreation) {
-                if (! PluginHook.WORLD_EDIT.pasteSchematic(config.guildSchematicFile, guildLocation, config.pasteSchematicWithAir)) {
-                    player.sendMessage(messages.createGuildCouldNotPasteSchematic);
+                if (!PluginHook.WORLD_EDIT!!.pasteSchematic(config.guildSchematicFile, guildLocation, config.pasteSchematicWithAir)) {
+                    player.sendMessage(messages.createGuildCouldNotPasteSchematic)
                 }
-            }
-            else if (config.createCenterSphere) {
-                for (Location locationInSphere : SpaceUtils.sphere(guildLocation, 4, 4, false, true, 0)) {
-                    if (locationInSphere.getBlock().getType() != Material.BEDROCK) {
-                        locationInSphere.getBlock().setType(Material.AIR);
+            } else if (config.createCenterSphere) {
+                for (locationInSphere in SpaceUtils.sphere(guildLocation, 4, 4, false, true, 0)) {
+                    if (locationInSphere!!.block.type != Material.BEDROCK) {
+                        locationInSphere.block.type = Material.AIR
                     }
                 }
-
-                for (Location locationInSphere : SpaceUtils.sphere(guildLocation, 4, 4, true, true, 0)) {
-                    if (locationInSphere.getBlock().getType() != Material.BEDROCK) {
-                        locationInSphere.getBlock().setType(Material.OBSIDIAN);
+                for (locationInSphere in SpaceUtils.sphere(guildLocation, 4, 4, true, true, 0)) {
+                    if (locationInSphere!!.block.type != Material.BEDROCK) {
+                        locationInSphere.block.type = Material.OBSIDIAN
                     }
                 }
-                
                 if (config.eventPhysics) {
-                    guildLocation.clone().subtract(0.0D, 2.0D, 0.0D).getBlock().setType(Material.OBSIDIAN);
+                    guildLocation.clone().subtract(0.0, 2.0, 0.0).block.type = Material.OBSIDIAN
                 }
             }
-            
-            GuildUtils.spawnHeart(guild);
-            player.teleport(guildLocation);
+            GuildUtils.spawnHeart(guild)
+            player.teleport(guildLocation)
         }
-
-        user.setGuild(guild);
-        GuildUtils.addGuild(guild);
-
+        user.guild = guild
+        GuildUtils.addGuild(guild)
         if (config.regionsEnabled) {
-            RegionUtils.addRegion(guild.getRegion());
+            RegionUtils.addRegion(guild.region)
         }
-
-        FunnyGuilds.getInstance().getConcurrencyManager().postRequests(
-                new RankUpdateGuildRequest(guild),
-                new PrefixGlobalAddGuildRequest(guild),
-                new PrefixGlobalAddPlayerRequest(user.getName()),
-                new DatabaseUpdateGuildRequest(guild)
-        );
-
-        Formatter formatter = new Formatter()
-                .register("{GUILD}", name)
-                .register("{TAG}", tag)
-                .register("{PLAYER}", player.getName());
-
-        player.sendMessage(formatter.format(messages.createGuild));
-        Bukkit.broadcastMessage(formatter.format(messages.broadcastCreate));
-
+        FunnyGuilds.Companion.getInstance().getConcurrencyManager().postRequests(
+            RankUpdateGuildRequest(guild),
+            PrefixGlobalAddGuildRequest(guild),
+            PrefixGlobalAddPlayerRequest(user.name),
+            DatabaseUpdateGuildRequest(guild)
+        )
+        val formatter = Formatter()
+            .register("{GUILD}", name)
+            .register("{TAG}", tag)
+            .register("{PLAYER}", player.name)
+        player.sendMessage(formatter.format(messages.createGuild))
+        Bukkit.broadcastMessage(formatter.format(messages.broadcastCreate))
         if (!config.giveRewardsForFirstGuild) {
-            return;
+            return
         }
-
-        for (ItemStack item : config.firstGuildRewards) {
-            if (player.getInventory().firstEmpty() == -1) {
-                player.getWorld().dropItemNaturally(player.getLocation(), item);
-                continue;
+        for (item in config.firstGuildRewards!!) {
+            if (player.inventory.firstEmpty() == -1) {
+                player.world.dropItemNaturally(player.location, item!!)
+                continue
             }
-
-            player.getInventory().addItem(item);
+            player.inventory.addItem(item)
         }
     }
 
+    companion object {
+        private const val SKY_LIMIT = 256
+    }
 }

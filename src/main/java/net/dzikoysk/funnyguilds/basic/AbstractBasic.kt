@@ -1,23 +1,16 @@
-package net.dzikoysk.funnyguilds.basic;
+package net.dzikoysk.funnyguilds.basic
 
-public abstract class AbstractBasic implements Basic {
-
-    private boolean wasChanged = true;
-
-    @Override
-    public void markChanged() {
-        this.wasChanged = true;
+abstract class AbstractBasic : Basic {
+    private var wasChanged = true
+    override fun markChanged() {
+        wasChanged = true
     }
 
-    @Override
-    public boolean wasChanged() {
-        boolean changedState = this.wasChanged;
-
+    override fun wasChanged(): Boolean {
+        val changedState = wasChanged
         if (changedState) {
-            this.wasChanged = false;
+            wasChanged = false
         }
-
-        return changedState;
+        return changedState
     }
-
 }

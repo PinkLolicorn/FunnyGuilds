@@ -1,67 +1,65 @@
-package net.dzikoysk.funnyguilds.util.commons;
+package net.dzikoysk.funnyguilds.util.commons
 
-import net.dzikoysk.funnyguilds.util.nms.Reflections;
-import org.apache.commons.lang3.Validate;
-import org.diorite.cfg.system.Template;
-import org.diorite.cfg.system.TemplateCreator;
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import org.apache.commons.lang3.Validate
+import org.diorite.cfg.system.TemplateCreator
+import java.io.File
+import java.io.IOException
+import java.lang.reflect.Constructor
+import java.lang.reflect.InvocationTargetException
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-public final class ConfigHelper {
-
-    @SuppressWarnings("unchecked")
-    public static <T> T loadConfig(final File file, final Class<T> implementationFile) {
-        final Constructor<T> implementationFileConstructor = (Constructor<T>) Reflections.getConstructor(implementationFile);
-        final Template<T> template = TemplateCreator.getTemplate(implementationFile);
-
-        T config;
-
+object ConfigHelper {
+    fun <T> loadConfig(file: File, implementationFile: Class<T>): T? {
+        val implementationFileConstructor = Reflections.getConstructor(implementationFile) as Constructor<T>
+        val template = TemplateCreator.getTemplate(implementationFile)
+        var config: T?
         if (!file.exists()) {
             try {
-                try {
-                    config = template.fillDefaults(implementationFileConstructor.newInstance());
-                } catch (final InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    throw new RuntimeException("Couldn't get access to " + implementationFile.getName() + "  constructor", e);
+                config = try {
+                    template.fillDefaults(implementationFileConstructor.newInstance())
+                } catch (e: InstantiationException) {
+                    throw RuntimeException("Couldn't get access to " + implementationFile.name + "  constructor", e)
+                } catch (e: IllegalAccessException) {
+                    throw RuntimeException("Couldn't get access to " + implementationFile.name + "  constructor", e)
+                } catch (e: IllegalArgumentException) {
+                    throw RuntimeException("Couldn't get access to " + implementationFile.name + "  constructor", e)
+                } catch (e: InvocationTargetException) {
+                    throw RuntimeException("Couldn't get access to " + implementationFile.name + "  constructor", e)
                 }
-
-                Validate.isTrue(file.createNewFile(), "Couldn't create " + file.getAbsolutePath() + " config file");
-
-            } catch (final IOException e) {
-                throw new RuntimeException("IO exception when creating config file: " + file.getAbsolutePath(), e);
+                Validate.isTrue(file.createNewFile(), "Couldn't create " + file.absolutePath + " config file")
+            } catch (e: IOException) {
+                throw RuntimeException("IO exception when creating config file: " + file.absolutePath, e)
             }
         } else {
             try {
                 try {
-                    config = template.load(file);
+                    config = template.load(file)
                     if (config == null) {
-                        config = template.fillDefaults(implementationFileConstructor.newInstance());
+                        config = template.fillDefaults(implementationFileConstructor.newInstance())
                     }
-                } catch (final IOException | IllegalArgumentException | InvocationTargetException e) {
-                    throw new RuntimeException("IO exception when loading config file: " + file.getAbsolutePath(), e);
+                } catch (e: IOException) {
+                    throw RuntimeException("IO exception when loading config file: " + file.absolutePath, e)
+                } catch (e: IllegalArgumentException) {
+                    throw RuntimeException("IO exception when loading config file: " + file.absolutePath, e)
+                } catch (e: InvocationTargetException) {
+                    throw RuntimeException("IO exception when loading config file: " + file.absolutePath, e)
                 }
-            } catch (final InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Couldn't get access to " + implementationFile.getName() + "  constructor", e);
+            } catch (e: InstantiationException) {
+                throw RuntimeException("Couldn't get access to " + implementationFile.name + "  constructor", e)
+            } catch (e: IllegalAccessException) {
+                throw RuntimeException("Couldn't get access to " + implementationFile.name + "  constructor", e)
             }
         }
-
         try {
-            template.dump(file, config, false);
-        } catch (final IOException e) {
-            throw new RuntimeException("Can't dump configuration file!", e);
+            template.dump(file, config, false)
+        } catch (e: IOException) {
+            throw RuntimeException("Can't dump configuration file!", e)
         }
-
-        return config;
+        return config
     }
 
-    public static String configToString(Object config) {
-        @SuppressWarnings("unchecked")
-        Template<Object> template = TemplateCreator.getTemplate((Class<Object>) config.getClass());
-        return template.dumpAsString(config);
-    }
-
-    private ConfigHelper() {
+    fun configToString(config: Any?): String {
+        val template = TemplateCreator.getTemplate(config!!.javaClass as Class<Any?>)
+        return template.dumpAsString(config)
     }
 }

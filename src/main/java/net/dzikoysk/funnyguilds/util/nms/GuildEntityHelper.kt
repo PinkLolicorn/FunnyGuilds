@@ -1,186 +1,146 @@
-package net.dzikoysk.funnyguilds.util.nms;
+package net.dzikoysk.funnyguilds.util.nms
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.basic.guild.Region;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.Guild
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
+import java.lang.reflect.Constructor
+import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentHashMap
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+object GuildEntityHelper {
+    private val SPAWN_ENTITY_CONSTRUCTOR: Constructor<*>? = null
+    private val SPAWN_ENTITY_LIVING_CONSTRUCTOR: Constructor<*>? = null
+    private val DESPAWN_ENTITY_CONSTRUCTOR: Constructor<*>? = null
+    private val ENTITY_CONSTRUCTOR: Constructor<*>? = null
+    private val SET_LOCATION: Method? = null
+    private val GET_ID: Method? = null
+    private val ENTITY_MAP: MutableMap<Guild?, Int> = ConcurrentHashMap()
+    private val ID_MAP: MutableMap<Int?, Any> = HashMap()
+    private val OBJECT_TYPE: ObjectType? = null
+    val guildEntities: Map<Guild?, Int>
+        get() = ENTITY_MAP
 
-public final class GuildEntityHelper {
-
-    private static final Constructor<?> SPAWN_ENTITY_CONSTRUCTOR;
-    private static final Constructor<?> SPAWN_ENTITY_LIVING_CONSTRUCTOR;
-    private static final Constructor<?> DESPAWN_ENTITY_CONSTRUCTOR;
-    private static final Constructor<?> ENTITY_CONSTRUCTOR;
-
-    private static final Method SET_LOCATION;
-    private static final Method GET_ID;
-
-    private static final Map<Guild, Integer> ENTITY_MAP = new ConcurrentHashMap<>();
-    private static final Map<Integer, Object> ID_MAP = new HashMap<>();
-    
-    private static final ObjectType OBJECT_TYPE;
-
-    static {
-        EntityType entityType = FunnyGuilds.getInstance().getPluginConfiguration().createEntityType;
-        String entityTypeName = entityType == null ? "EnderCrystal" : entityType.getEntityClass().getSimpleName();
-        
-        final Class<?> generalEntityClass = Reflections.getNMSClass("Entity");
-        final Class<?> entityLivingClass = Reflections.getNMSClass("EntityLiving");
-        final Class<?> entityClass = Reflections.getNMSClass("Entity" + entityTypeName);
-        final Class<?> spawnEntityClass = Reflections.getNMSClass("PacketPlayOutSpawnEntity");
-        final Class<?> spawnEntityLivingClass = Reflections.getNMSClass("PacketPlayOutSpawnEntityLiving");
-        final Class<?> despawnEntityClass = Reflections.getNMSClass("PacketPlayOutEntityDestroy");
-        final Class<?> craftWorldClass = Reflections.getNMSClass("World");
-
-        SPAWN_ENTITY_CONSTRUCTOR = Reflections.getConstructor(spawnEntityClass, generalEntityClass, int.class);
-        SPAWN_ENTITY_LIVING_CONSTRUCTOR = Reflections.getConstructor(spawnEntityLivingClass, entityLivingClass);
-        DESPAWN_ENTITY_CONSTRUCTOR = Reflections.getConstructor(despawnEntityClass, int[].class);
-
-        switch (Reflections.SERVER_VERSION) {
-            case "v1_14_R1":
-            case "v1_15_R1":
-            case "v1_16_R1":
-            case "v1_16_R2":
-            case "v1_16_R3":
-                ENTITY_CONSTRUCTOR = Reflections.getConstructor(entityClass, craftWorldClass, double.class, double.class, double.class);
-                break;
-            default:
-                ENTITY_CONSTRUCTOR = Reflections.getConstructor(entityClass, craftWorldClass);
-                break;
+    @Throws(Exception::class)
+    private fun createSpawnGuildHeartPacket(loc: Location): Int {
+        val world = Reflections.getHandle(loc.world)
+        val entity: Any
+        when (Reflections.SERVER_VERSION) {
+            "v1_14_R1", "v1_15_R1", "v1_16_R1", "v1_16_R2", "v1_16_R3" -> entity = ENTITY_CONSTRUCTOR!!.newInstance(world, loc.x, loc.y, loc.z)
+            else -> {
+                entity = ENTITY_CONSTRUCTOR!!.newInstance(world)
+                SET_LOCATION!!.invoke(entity, loc.x, loc.y, loc.z, 0, 0)
+            }
         }
-
-        SET_LOCATION = Reflections.getMethod(entityClass, "setLocation", double.class, double.class, double.class, float.class, float.class);
-        GET_ID = Reflections.getMethod(entityClass, "getId");
-        
-        OBJECT_TYPE = entityLivingClass.isAssignableFrom(entityClass) ? null : ObjectType.get(entityType);
-    }
-
-    public static Map<Guild, Integer> getGuildEntities() {
-        return ENTITY_MAP;
-    }
-
-    private static int createSpawnGuildHeartPacket(Location loc) throws Exception {
-        Object world = Reflections.getHandle(loc.getWorld());
-
-        Object entity;
-
-        switch (Reflections.SERVER_VERSION) {
-            case "v1_14_R1":
-            case "v1_15_R1":
-            case "v1_16_R1":
-            case "v1_16_R2":
-            case "v1_16_R3":
-                entity = ENTITY_CONSTRUCTOR.newInstance(world, loc.getX(), loc.getY(), loc.getZ());
-                break;
-            default:
-                entity = ENTITY_CONSTRUCTOR.newInstance(world);
-                SET_LOCATION.invoke(entity, loc.getX(), loc.getY(), loc.getZ(), 0, 0);
-                break;
-        }
-
-        Object packet;
-        if (OBJECT_TYPE == null) {
-            packet = SPAWN_ENTITY_LIVING_CONSTRUCTOR.newInstance(entity);
+        val packet: Any
+        packet = if (OBJECT_TYPE == null) {
+            SPAWN_ENTITY_LIVING_CONSTRUCTOR!!.newInstance(entity)
         } else {
-            packet = SPAWN_ENTITY_CONSTRUCTOR.newInstance(entity, OBJECT_TYPE.getObjectID());
+            SPAWN_ENTITY_CONSTRUCTOR!!.newInstance(entity, OBJECT_TYPE.objectID)
         }
-        
-        int id = (int) GET_ID.invoke(entity);
-        ID_MAP.put(id, packet);
-        
-        return id;
+        val id = GET_ID!!.invoke(entity) as Int
+        ID_MAP[id] = packet
+        return id
     }
 
-    private static Object createDespawnGuildHeartPacket(int id) throws Exception {
-        return DESPAWN_ENTITY_CONSTRUCTOR.newInstance(new int[]{id});
+    @Throws(Exception::class)
+    private fun createDespawnGuildHeartPacket(id: Int): Any {
+        return DESPAWN_ENTITY_CONSTRUCTOR!!.newInstance(*intArrayOf(id))
     }
 
-    public static void spawnGuildHeart(Guild guild) {
-        spawnGuildHeart(guild, Bukkit.getOnlinePlayers().toArray(new Player[0]));
+    fun spawnGuildHeart(guild: Guild?) {
+        spawnGuildHeart(guild, *Bukkit.getOnlinePlayers().toTypedArray())
     }
 
-    public static void spawnGuildHeart(Guild guild, Player... players) {
+    fun spawnGuildHeart(guild: Guild?, vararg players: Player?) {
         try {
-            Object value;
-
+            val value: Any?
             if (!ENTITY_MAP.containsKey(guild)) {
-                Region region = guild.getRegion();
-
-                if (region == null) {
-                    return;
-                }
-
-                Location center = region.getCenter();
-
-                if (center == null) {
-                    return;
-                }
-
-                int id = createSpawnGuildHeartPacket(center.clone().add(0.5D, - 1.0D, 0.5D));
-                
-                value = ID_MAP.get(id);
-                ENTITY_MAP.put(guild, id);
+                val region = guild.getRegion() ?: return
+                val center = region.center ?: return
+                val id = createSpawnGuildHeartPacket(center.clone().add(0.5, -1.0, 0.5))
+                value = ID_MAP[id]
+                ENTITY_MAP[guild] = id
             } else {
-                value = ID_MAP.get(ENTITY_MAP.get(guild));
+                value = ID_MAP[ENTITY_MAP[guild]]
             }
-            
-            PacketSender.sendPacket(players, value);
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("Could not spawn guild heart", exception);
+            PacketSender.sendPacket(players, value)
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not spawn guild heart", exception)
         }
-
     }
 
-    public static void despawnGuildHeart(Guild guild) {
+    fun despawnGuildHeart(guild: Guild?) {
         try {
             if (!ENTITY_MAP.containsKey(guild)) {
-                return;
+                return
             }
-            
-            int id = ENTITY_MAP.get(guild);
-            
-            ID_MAP.remove(id);
-            ENTITY_MAP.remove(guild);
-
-            Object o = createDespawnGuildHeartPacket(id);
-            PacketSender.sendPacket(Bukkit.getOnlinePlayers(), o);
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("Could not despawn guild heart", exception);
+            val id = ENTITY_MAP[guild]!!
+            ID_MAP.remove(id)
+            ENTITY_MAP.remove(guild)
+            val o = createDespawnGuildHeartPacket(id)
+            PacketSender.sendPacket(Bukkit.getOnlinePlayers(), o)
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not despawn guild heart", exception)
         }
     }
 
-    public static void despawnGuildHeart(Guild guild, Player... players) {
+    fun despawnGuildHeart(guild: Guild?, vararg players: Player?) {
         try {
             if (!ENTITY_MAP.containsKey(guild)) {
-                return;
+                return
             }
-            
-            int id = ENTITY_MAP.get(guild);
-            Object o = createDespawnGuildHeartPacket(id);
-            
-            PacketSender.sendPacket(players, o);
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("Could not despawn guild heart", exception);
+            val id = ENTITY_MAP[guild]!!
+            val o = createDespawnGuildHeartPacket(id)
+            PacketSender.sendPacket(players, o)
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not despawn guild heart", exception)
         }
     }
 
-    public static void despawnGuildHearts() {
-        for (Guild guild : GuildUtils.getGuilds()) {
-            despawnGuildHeart(guild);
+    fun despawnGuildHearts() {
+        for (guild in GuildUtils.getGuilds()) {
+            despawnGuildHeart(guild)
         }
     }
 
-    private GuildEntityHelper() {
+    init {
+        val entityType: EntityType = FunnyGuilds.Companion.getInstance().getPluginConfiguration().createEntityType
+        val entityTypeName = if (net.dzikoysk.funnyguilds.util.nms.entityType == null) "EnderCrystal" else net.dzikoysk.funnyguilds.util.nms.entityType.getEntityClass().getSimpleName()
+        val generalEntityClass = Reflections.getNMSClass("Entity")
+        val entityLivingClass = Reflections.getNMSClass("EntityLiving")
+        val entityClass = Reflections.getNMSClass("Entity" + net.dzikoysk.funnyguilds.util.nms.entityTypeName)
+        val spawnEntityClass = Reflections.getNMSClass("PacketPlayOutSpawnEntity")
+        val spawnEntityLivingClass = Reflections.getNMSClass("PacketPlayOutSpawnEntityLiving")
+        val despawnEntityClass = Reflections.getNMSClass("PacketPlayOutEntityDestroy")
+        val craftWorldClass = Reflections.getNMSClass("World")
+        SPAWN_ENTITY_CONSTRUCTOR = Reflections.getConstructor(net.dzikoysk.funnyguilds.util.nms.spawnEntityClass, net.dzikoysk.funnyguilds.util.nms.generalEntityClass, Int::class.javaPrimitiveType)
+        SPAWN_ENTITY_LIVING_CONSTRUCTOR = Reflections.getConstructor(net.dzikoysk.funnyguilds.util.nms.spawnEntityLivingClass, net.dzikoysk.funnyguilds.util.nms.entityLivingClass)
+        DESPAWN_ENTITY_CONSTRUCTOR = Reflections.getConstructor(net.dzikoysk.funnyguilds.util.nms.despawnEntityClass, IntArray::class.java)
+        when (Reflections.SERVER_VERSION) {
+            "v1_14_R1", "v1_15_R1", "v1_16_R1", "v1_16_R2", "v1_16_R3" -> ENTITY_CONSTRUCTOR = Reflections.getConstructor(
+                net.dzikoysk.funnyguilds.util.nms.entityClass,
+                net.dzikoysk.funnyguilds.util.nms.craftWorldClass,
+                Double::class.javaPrimitiveType,
+                Double::class.javaPrimitiveType,
+                Double::class.javaPrimitiveType
+            )
+            else -> ENTITY_CONSTRUCTOR = Reflections.getConstructor(net.dzikoysk.funnyguilds.util.nms.entityClass, net.dzikoysk.funnyguilds.util.nms.craftWorldClass)
+        }
+        SET_LOCATION = Reflections.getMethod(
+            net.dzikoysk.funnyguilds.util.nms.entityClass,
+            "setLocation",
+            Double::class.javaPrimitiveType!!,
+            Double::class.javaPrimitiveType!!,
+            Double::class.javaPrimitiveType!!,
+            Float::class.javaPrimitiveType!!,
+            Float::class.javaPrimitiveType!!
+        )
+        GET_ID = Reflections.getMethod(net.dzikoysk.funnyguilds.util.nms.entityClass, "getId")
+        OBJECT_TYPE =
+            if (net.dzikoysk.funnyguilds.util.nms.entityLivingClass.isAssignableFrom(net.dzikoysk.funnyguilds.util.nms.entityClass)) null else ObjectType.Companion.get(net.dzikoysk.funnyguilds.util.nms.entityType)
     }
-
 }

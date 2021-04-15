@@ -1,74 +1,68 @@
-package net.dzikoysk.funnyguilds.event;
+package net.dzikoysk.funnyguilds.event
 
-import net.dzikoysk.funnyguilds.basic.user.User;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
+net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.element.gui.GuiActionHandler
+import net.dzikoysk.funnyguilds.listener.EntityDamage
+import net.dzikoysk.funnyguilds.listener.EntityInteract
+import net.dzikoysk.funnyguilds.listener.PlayerChat
+import net.dzikoysk.funnyguilds.listener.PlayerDeath
+import net.dzikoysk.funnyguilds.listener.PlayerJoin
+import net.dzikoysk.funnyguilds.listener.PlayerLogin
+import net.dzikoysk.funnyguilds.listener.PlayerQuit
+import net.dzikoysk.funnyguilds.listener.TntProtection
+import net.dzikoysk.funnyguilds.listener.BlockFlow
+import net.dzikoysk.funnyguilds.listener.region.EntityPlace
+import net.dzikoysk.funnyguilds.listener.region.BlockBreak
+import net.dzikoysk.funnyguilds.listener.region.BlockIgnite
+import net.dzikoysk.funnyguilds.listener.region.BucketAction
+import net.dzikoysk.funnyguilds.listener.region.EntityExplode
+import net.dzikoysk.funnyguilds.listener.region.HangingBreak
+import net.dzikoysk.funnyguilds.listener.region.HangingPlace
+import net.dzikoysk.funnyguilds.listener.region.PlayerCommand
+import net.dzikoysk.funnyguilds.listener.region.PlayerInteract
+import net.dzikoysk.funnyguilds.listener.region.EntityProtect
+import net.dzikoysk.funnyguilds.listener.region.PlayerMove
+import net.dzikoysk.funnyguilds.listener.region.BlockPhysics
+import net.dzikoysk.funnyguilds.listener.region.PlayerRespawnimport
 
-public abstract class FunnyEvent extends Event implements Cancellable {
+org.bukkit.event.Cancellableimport org.bukkit.event.Event
+import java.lang.StackTraceElement
 
-    private final EventCause eventCause;
-    private final User doer;
-    
-    private String cancelMessage;
-    private boolean cancelled;
-    
-    public FunnyEvent(EventCause eventCause, User doer) {
-        this.eventCause = eventCause;
-        this.doer = doer;
+abstract class FunnyEvent : Event, Cancellable {
+    val eventCause: EventCause?
+    val doer: User?
+    var cancelMessage: String? = null
+        get() = if (field == null || field!!.isEmpty()) {
+            defaultCancelMessage
+        } else field
+    private var cancelled = false
+
+    constructor(eventCause: EventCause?, doer: User?) {
+        this.eventCause = eventCause
+        this.doer = doer
     }
 
-    public FunnyEvent(EventCause eventCause, User doer, boolean isAsync) {
-        super(isAsync);
-        this.eventCause = eventCause;
-        this.doer = doer;
+    constructor(eventCause: EventCause?, doer: User?, isAsync: Boolean) : super(isAsync) {
+        this.eventCause = eventCause
+        this.doer = doer
     }
-    
-    public EventCause getEventCause() {
-        return this.eventCause;
+
+    abstract val defaultCancelMessage: String
+    override fun isCancelled(): Boolean {
+        return cancelled
     }
-    
-    public User getDoer() {
-        return this.doer;
+
+    override fun setCancelled(cancelled: Boolean) {
+        this.cancelled = cancelled
     }
-    
-    public abstract String getDefaultCancelMessage();
-    
-    public String getCancelMessage() {
-        if (this.cancelMessage == null || this.cancelMessage.isEmpty()) {
-            return getDefaultCancelMessage();
+
+    fun notifyDoer() {
+        if (doer != null && doer.isOnline) {
+            doer.player.sendMessage(cancelMessage)
         }
-        
-        return this.cancelMessage;
     }
 
-    public void setCancelMessage(String cancelMessage) {
-        this.cancelMessage = cancelMessage;
+    enum class EventCause {
+        ADMIN, CONSOLE, SYSTEM, USER, UNKNOWN
     }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled) {
-        this.cancelled = cancelled;
-    }
-    
-    public void notifyDoer() {
-        if (this.doer != null && this.doer.isOnline()) {
-            this.doer.getPlayer().sendMessage(getCancelMessage());
-        }
-    }
-
-    public enum EventCause {
-
-        ADMIN,
-        CONSOLE,
-        SYSTEM,
-        USER,
-        UNKNOWN;
-
-    }
-    
 }

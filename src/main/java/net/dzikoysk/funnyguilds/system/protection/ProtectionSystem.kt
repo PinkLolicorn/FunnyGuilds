@@ -1,62 +1,48 @@
-package net.dzikoysk.funnyguilds.system.protection;
+package net.dzikoysk.funnyguilds.system.protection
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.Region;
-import net.dzikoysk.funnyguilds.basic.guild.RegionUtils;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import org.apache.commons.lang3.tuple.Pair;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.guild.RegionUtils
+import net.dzikoysk.funnyguilds.basic.user.User
+import org.apache.commons.lang3.tuple.Pair
+import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.entity.Player
+import java.util.concurrent.TimeUnit
 
-import java.util.concurrent.TimeUnit;
-
-public final class ProtectionSystem {
-
-    public static boolean isProtected(Player player, Location location, boolean includeBuildLock) {
+object ProtectionSystem {
+    fun isProtected(player: Player?, location: Location?, includeBuildLock: Boolean): Boolean {
         if (player == null || location == null) {
-            return false;
+            return false
         }
-        
         if (player.hasPermission("funnyguilds.admin.build")) {
-            return false;
+            return false
         }
-        
-        Region region = RegionUtils.getAt(location);
-
-        if (region == null) {
-            return false;
+        val region = RegionUtils.getAt(location) ?: return false
+        val guild = region.guild
+        if (guild == null || guild.name == null) {
+            return false
         }
-        
-        Guild guild = region.getGuild();
-
-        if (guild == null || guild.getName() == null) {
-            return false;
+        val user: User = User.Companion.get(player)
+        if (!guild.members.contains(user)) {
+            return true
         }
-        
-        User user = User.get(player);
-
-        if (!guild.getMembers().contains(user)) {
-            return true;
-        }
-
         if (includeBuildLock && !guild.canBuild()) {
-            player.sendMessage(FunnyGuilds.getInstance().getMessageConfiguration().regionExplodeInteract.replace("{TIME}",
-                    Long.toString(TimeUnit.MILLISECONDS.toSeconds(guild.getBuild() - System.currentTimeMillis()))));
-            return true;
+            player.sendMessage(
+                FunnyGuilds.Companion.getInstance().getMessageConfiguration().regionExplodeInteract.replace(
+                    "{TIME}",
+                    java.lang.Long.toString(TimeUnit.MILLISECONDS.toSeconds(guild.build - System.currentTimeMillis()))
+                )
+            )
+            return true
         }
-
-        if (location.equals(region.getHeart())) {
-            Pair<Material, Byte> heartMaterial = FunnyGuilds.getInstance().getPluginConfiguration().createMaterial;
-            return heartMaterial != null && heartMaterial.getLeft() != Material.AIR;
+        if (location == region.heart) {
+            val heartMaterial: Pair<Material, Byte> = FunnyGuilds.Companion.getInstance().getPluginConfiguration().createMaterial
+            return heartMaterial != null && heartMaterial.left != Material.AIR
         }
-
-        return false;
+        return false
     }
 
-    public static boolean isProtected(Player player, Location loc) {
-        return isProtected(player, loc, false);
+    fun isProtected(player: Player?, loc: Location?): Boolean {
+        return isProtected(player, loc, false)
     }
-
 }

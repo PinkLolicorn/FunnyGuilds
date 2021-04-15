@@ -1,274 +1,210 @@
-package net.dzikoysk.funnyguilds.util.commons.bukkit;
+package net.dzikoysk.funnyguilds.util.commons.bukkit
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration;
-import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration;
-import net.dzikoysk.funnyguilds.util.commons.ChatUtils;
-import net.dzikoysk.funnyguilds.util.commons.spigot.ItemComponentUtils;
-import net.dzikoysk.funnyguilds.util.nms.EggTypeChanger;
-import net.dzikoysk.funnyguilds.util.nms.Reflections;
-import org.apache.commons.lang3.StringUtils;
-import org.bukkit.Color;
-import org.bukkit.Material;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.inventory.meta.SkullMeta;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.data.configs.MessageConfiguration
+import net.dzikoysk.funnyguilds.data.configs.PluginConfiguration
+import net.dzikoysk.funnyguilds.util.commons.ChatUtils
+import net.dzikoysk.funnyguilds.util.commons.spigot.ItemComponentUtils
+import net.dzikoysk.funnyguilds.util.nms.EggTypeChanger
+import net.dzikoysk.funnyguilds.util.nms.Reflections
+import org.apache.commons.lang3.StringUtils
+import org.bukkit.Color
+import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
+import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemFlag
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.LeatherArmorMeta
+import org.bukkit.inventory.meta.SkullMeta
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.util.*
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
-public final class ItemUtils {
-
-    private static Method BY_IN_GAME_NAME_ENCHANT;
-    private static Method CREATE_NAMESPACED_KEY;
-
-    static {
-        if (! Reflections.USE_PRE_12_METHODS) {
-            Class<?> namespacedKeyClass = Reflections.getBukkitClass("NamespacedKey");
-
-            BY_IN_GAME_NAME_ENCHANT = Reflections.getMethod(Enchantment.class, "getByKey");
-            CREATE_NAMESPACED_KEY = Reflections.getMethod(namespacedKeyClass, "minecraft", String.class);
-        }
-    }
-
-    private ItemUtils() {}
-
-    public static boolean playerHasEnoughItems(Player player, List<ItemStack> requiredItems) {
-        PluginConfiguration config = FunnyGuilds.getInstance().getPluginConfiguration();
-        MessageConfiguration messages = FunnyGuilds.getInstance().getMessageConfiguration();
-
-        for (ItemStack requiredItem : requiredItems) {
-            if (player.getInventory().containsAtLeast(requiredItem, requiredItem.getAmount())) {
-                continue;
+object ItemUtils {
+    private var BY_IN_GAME_NAME_ENCHANT: Method? = null
+    private var CREATE_NAMESPACED_KEY: Method? = null
+    fun playerHasEnoughItems(player: Player, requiredItems: List<ItemStack?>?): Boolean {
+        val config: PluginConfiguration = FunnyGuilds.Companion.getInstance().getPluginConfiguration()
+        val messages: MessageConfiguration = FunnyGuilds.Companion.getInstance().getMessageConfiguration()
+        for (requiredItem in requiredItems!!) {
+            if (player.inventory.containsAtLeast(requiredItem, requiredItem!!.amount)) {
+                continue
             }
-
             if (config.enableItemComponent) {
-                player.spigot().sendMessage(ItemComponentUtils.translateComponentPlaceholder(messages.createItems, requiredItems, requiredItem));
+                player.spigot().sendMessage(ItemComponentUtils.translateComponentPlaceholder(messages.createItems, requiredItems, requiredItem))
+            } else {
+                player.sendMessage(translateTextPlaceholder(messages.createItems, requiredItems, requiredItem)!!)
             }
-            else {
-                player.sendMessage(ItemUtils.translateTextPlaceholder(messages.createItems, requiredItems, requiredItem));
-            }
-
-            return false;
+            return false
         }
-
-        return true;
+        return true
     }
 
-    public static String translateTextPlaceholder(String message, Collection<ItemStack> items, ItemStack item) {
-        StringBuilder contentBuilder = new StringBuilder();
-        PluginConfiguration config = FunnyGuilds.getInstance().getPluginConfiguration();
-
-        if (message.contains("{ITEM}")) {
-            contentBuilder.append(item.getAmount());
-            contentBuilder.append(config.itemAmountSuffix + " ");
-            contentBuilder.append(MaterialUtils.getMaterialName(item.getType()));
-
-            message = StringUtils.replace(message, "{ITEM}", contentBuilder.toString());
+    fun translateTextPlaceholder(message: String?, items: Collection<ItemStack?>?, item: ItemStack?): String? {
+        var message = message
+        val contentBuilder = StringBuilder()
+        val config: PluginConfiguration = FunnyGuilds.Companion.getInstance().getPluginConfiguration()
+        if (message!!.contains("{ITEM}")) {
+            contentBuilder.append(item!!.amount)
+            contentBuilder.append(config.itemAmountSuffix + " ")
+            contentBuilder.append(MaterialUtils.getMaterialName(item.type))
+            message = StringUtils.replace(message, "{ITEM}", contentBuilder.toString())
         }
-
-        if (message.contains("{ITEMS}")) {
-            Collection<String> translatedItems = new ArrayList<>();
-
-            for (ItemStack itemStack : items) {
-                contentBuilder.setLength(0);
-
-                contentBuilder.append(itemStack.getAmount());
-                contentBuilder.append(config.itemAmountSuffix + " ");
-                contentBuilder.append(MaterialUtils.getMaterialName(itemStack.getType()));
-
-                translatedItems.add(contentBuilder.toString());
+        if (message!!.contains("{ITEMS}")) {
+            val translatedItems: MutableCollection<String?> = ArrayList()
+            for (itemStack in items!!) {
+                contentBuilder.setLength(0)
+                contentBuilder.append(itemStack!!.amount)
+                contentBuilder.append(config.itemAmountSuffix + " ")
+                contentBuilder.append(MaterialUtils.getMaterialName(itemStack.type))
+                translatedItems.add(contentBuilder.toString())
             }
-
-            message = StringUtils.replace(message, "{ITEMS}", ChatUtils.toString(translatedItems, true));
+            message = StringUtils.replace(message, "{ITEMS}", ChatUtils.toString(translatedItems, true))
         }
-
-        if (message.contains("{ITEM-NO-AMOUNT}")) {
-            contentBuilder.setLength(0);
-            contentBuilder.append(MaterialUtils.getMaterialName(item.getType()));
-
-            message = StringUtils.replace(message, "{ITEM-NO-AMOUNT}", contentBuilder.toString());
+        if (message!!.contains("{ITEM-NO-AMOUNT}")) {
+            contentBuilder.setLength(0)
+            contentBuilder.append(MaterialUtils.getMaterialName(item!!.type))
+            message = StringUtils.replace(message, "{ITEM-NO-AMOUNT}", contentBuilder.toString())
         }
-
-        return message;
+        return message
     }
 
-    public static ItemStack parseItem(String string) {
-        String[] split = string.split(" ");
-        String[] typeSplit = split[1].split(":");
-        String subtype = typeSplit.length > 1 ? typeSplit[1] : "0";
-
-        Material material = MaterialUtils.parseMaterial(typeSplit[0], false);
-
-        int stack;
-        int data;
-
+    fun parseItem(string: String): ItemStack {
+        val split = string.split(" ".toRegex()).toTypedArray()
+        val typeSplit = split[1].split(":".toRegex()).toTypedArray()
+        val subtype = if (typeSplit.size > 1) typeSplit[1] else "0"
+        val material = MaterialUtils.parseMaterial(typeSplit[0], false)
+        var stack: Int
+        var data: Int
         try {
-            stack = Integer.parseInt(split[0]);
-            data = Integer.parseInt(subtype);
+            stack = split[0].toInt()
+            data = subtype.toInt()
+        } catch (e: NumberFormatException) {
+            FunnyGuilds.Companion.getPluginLogger().parser("Unknown size: " + split[0])
+            stack = 1
+            data = 0
         }
-        catch (NumberFormatException e) {
-            FunnyGuilds.getPluginLogger().parser("Unknown size: " + split[0]);
-            stack = 1;
-            data = 0;
-        }
-
-        ItemBuilder item = new ItemBuilder(material, stack, data);
-
-        for (int index = 2; index < split.length; index++) {
-            String[] itemAttribute = split[index].split(":");
-
-            String attributeName = itemAttribute[0];
-            String[] attributeValue = Arrays.copyOfRange(itemAttribute, 1, itemAttribute.length);
-
-            if (attributeName.equalsIgnoreCase("name")) {
-                item.setName(StringUtils.replace(ChatUtils.colored(String.join(":", attributeValue)), "_", " "), true);
-            }
-            else if (attributeName.equalsIgnoreCase("lore")) {
-                String[] lores = String.join(":", attributeValue).split("#");
-                List<String> lore = new ArrayList<>();
-
-                for (String loreLine : lores) {
-                    lore.add(StringUtils.replace(StringUtils.replace(ChatUtils.colored(loreLine), "_", " "), "{HASH}", "#"));
+        val item = ItemBuilder(material, stack, data)
+        for (index in 2 until split.size) {
+            val itemAttribute = split[index].split(":".toRegex()).toTypedArray()
+            val attributeName = itemAttribute[0]
+            val attributeValue = Arrays.copyOfRange(itemAttribute, 1, itemAttribute.size)
+            if (attributeName.equals("name", ignoreCase = true)) {
+                item.setName(StringUtils.replace(ChatUtils.colored(java.lang.String.join(":", *attributeValue)), "_", " "), true)
+            } else if (attributeName.equals("lore", ignoreCase = true)) {
+                val lores = java.lang.String.join(":", *attributeValue).split("#".toRegex()).toTypedArray()
+                val lore: MutableList<String> = ArrayList()
+                for (loreLine in lores) {
+                    lore.add(StringUtils.replace(StringUtils.replace(ChatUtils.colored(loreLine), "_", " "), "{HASH}", "#"))
                 }
-
-                item.setLore(lore);
-            }
-            else if (attributeName.equalsIgnoreCase("enchant")) {
-                int level;
-
-                try {
-                    level = Integer.parseInt(attributeValue[1]);
+                item.setLore(lore)
+            } else if (attributeName.equals("enchant", ignoreCase = true)) {
+                var level: Int
+                level = try {
+                    attributeValue[1].toInt()
+                } catch (numberFormatException: NumberFormatException) {
+                    FunnyGuilds.Companion.getPluginLogger().parser("Unknown enchant level: " + attributeValue[1])
+                    1
                 }
-                catch (NumberFormatException numberFormatException) {
-                    FunnyGuilds.getPluginLogger().parser("Unknown enchant level: " + attributeValue[1]);
-                    level = 1;
-                }
-
-                Enchantment enchant = matchEnchant(attributeValue[0]);
-
+                val enchant = matchEnchant(attributeValue[0])
                 if (enchant == null) {
-                    FunnyGuilds.getPluginLogger().parser("Unknown enchant: " + attributeValue[0]);
-                    continue;
+                    FunnyGuilds.Companion.getPluginLogger().parser("Unknown enchant: " + attributeValue[0])
+                    continue
                 }
-
-                item.addEnchant(enchant, level);
-            }
-            else if (attributeName.equalsIgnoreCase("skullowner")) {
-                if (item.getMeta() instanceof SkullMeta) {
-                    ((SkullMeta) item.getMeta()).setOwner(attributeValue[0]);
-                    item.refreshMeta();
+                item.addEnchant(enchant, level)
+            } else if (attributeName.equals("skullowner", ignoreCase = true)) {
+                if (item.meta is SkullMeta) {
+                    (item.meta as SkullMeta).owner = attributeValue[0]
+                    item.refreshMeta()
                 }
-            }
-            else if (attributeName.equalsIgnoreCase("flags")) {
-                String[] flags = attributeValue[0].split(",");
-
-                for (String flag : flags) {
-                    flag = flag.trim();
-                    ItemFlag matchedFlag = matchItemFlag(flag);
-
+            } else if (attributeName.equals("flags", ignoreCase = true)) {
+                val flags = attributeValue[0].split(",".toRegex()).toTypedArray()
+                for (flag in flags) {
+                    flag = flag.trim { it <= ' ' }
+                    val matchedFlag = matchItemFlag(flag)
                     if (matchedFlag == null) {
-                        FunnyGuilds.getPluginLogger().parser("Unknown item flag: " + flag);
-                        continue;
+                        FunnyGuilds.Companion.getPluginLogger().parser("Unknown item flag: $flag")
+                        continue
                     }
-
-                    item.setFlag(matchedFlag);
+                    item.setFlag(matchedFlag)
                 }
-
-            }
-            else if (attributeName.equalsIgnoreCase("armorcolor")) {
-                if (! (item.getMeta() instanceof LeatherArmorMeta)) {
-                    FunnyGuilds.getPluginLogger().parser("Invalid item armor color attribute (given item is not a leather armor!): " + split[index]);
-                    continue;
+            } else if (attributeName.equals("armorcolor", ignoreCase = true)) {
+                if (item.meta !is LeatherArmorMeta) {
+                    FunnyGuilds.Companion.getPluginLogger().parser("Invalid item armor color attribute (given item is not a leather armor!): " + split[index])
+                    continue
                 }
-
-                String[] color = attributeValue[0].split("_");
-
+                val color = attributeValue[0].split("_".toRegex()).toTypedArray()
                 try {
-                    ((LeatherArmorMeta) item.getMeta()).setColor(Color.fromRGB(Integer.parseInt(color[0]),
-                            Integer.parseInt(color[1]), Integer.parseInt(color[2])));
-                    item.refreshMeta();
+                    (item.meta as LeatherArmorMeta).setColor(Color.fromRGB(color[0].toInt(), color[1].toInt(), color[2].toInt()))
+                    item.refreshMeta()
+                } catch (numberFormatException: NumberFormatException) {
+                    FunnyGuilds.Companion.getPluginLogger().parser("Invalid armor color: " + Arrays.toString(attributeValue))
                 }
-                catch (NumberFormatException numberFormatException) {
-                    FunnyGuilds.getPluginLogger().parser("Invalid armor color: " + Arrays.toString(attributeValue));
-                }
-            }
-            else if (attributeName.equalsIgnoreCase("eggtype")) {
+            } else if (attributeName.equals("eggtype", ignoreCase = true)) {
                 if (EggTypeChanger.needsSpawnEggMeta()) {
-                    EntityType type = null;
-                    String entityTypeName = attributeValue[0].toUpperCase();
-
+                    var type: EntityType? = null
+                    val entityTypeName = attributeValue[0].toUpperCase()
                     try {
-                        type = EntityType.valueOf(entityTypeName);
+                        type = EntityType.valueOf(entityTypeName)
+                    } catch (exception: Exception) {
+                        FunnyGuilds.Companion.getPluginLogger().parser("Unknown entity type: $entityTypeName")
                     }
-                    catch (Exception exception) {
-                        FunnyGuilds.getPluginLogger().parser("Unknown entity type: " + entityTypeName);
-                    }
-
                     if (type != null) {
-                        EggTypeChanger.applyChanges(item.getMeta(), type);
-                        item.refreshMeta();
+                        EggTypeChanger.applyChanges(item.meta, type)
+                        item.refreshMeta()
                     }
-                }
-                else {
-                    FunnyGuilds.getPluginLogger().info("This MC version supports metadata for spawnGuildHeart egg type, no need to use eggtype in item creation!");
+                } else {
+                    FunnyGuilds.Companion.getPluginLogger().info("This MC version supports metadata for spawnGuildHeart egg type, no need to use eggtype in item creation!")
                 }
             }
         }
-
-        return item.getItem();
+        return item.item
     }
 
-    private static Enchantment matchEnchant(String enchantName) {
+    private fun matchEnchant(enchantName: String): Enchantment? {
         if (BY_IN_GAME_NAME_ENCHANT != null && CREATE_NAMESPACED_KEY != null) {
             try {
-                Object namespacedKey = CREATE_NAMESPACED_KEY.invoke(null, enchantName.toLowerCase());
-                Object enchantment = BY_IN_GAME_NAME_ENCHANT.invoke(null, namespacedKey);
-
+                val namespacedKey = CREATE_NAMESPACED_KEY!!.invoke(null, enchantName.toLowerCase())
+                val enchantment = BY_IN_GAME_NAME_ENCHANT!!.invoke(null, namespacedKey)
                 if (enchantment != null) {
-                    return (Enchantment) enchantment;
+                    return enchantment as Enchantment
                 }
-            }
-            catch (IllegalAccessException | InvocationTargetException ignored) {
-            }
-        }
-
-        return Enchantment.getByName(enchantName.toUpperCase());
-    }
-
-    private static ItemFlag matchItemFlag(String flagName) {
-        for (ItemFlag flag : ItemFlag.values()) {
-            if (flag.name().equalsIgnoreCase(flagName)) {
-                return flag;
+            } catch (ignored: IllegalAccessException) {
+            } catch (ignored: InvocationTargetException) {
             }
         }
-
-        return null;
+        return Enchantment.getByName(enchantName.toUpperCase())
     }
 
-    public static int getItemAmount(ItemStack item, Inventory inv) {
-        int amount = 0;
-
-        for (ItemStack is : inv.getContents()) {
-            if (item.isSimilar(is)) {
-                amount += is.getAmount();
+    private fun matchItemFlag(flagName: String): ItemFlag? {
+        for (flag in ItemFlag.values()) {
+            if (flag.name.equals(flagName, ignoreCase = true)) {
+                return flag
             }
         }
-
-        return amount;
+        return null
     }
 
-    public static ItemStack[] toArray(Collection<ItemStack> collection) {
-        return collection.toArray(new ItemStack[0]);
+    fun getItemAmount(item: ItemStack, inv: Inventory): Int {
+        var amount = 0
+        for (`is` in inv.contents) {
+            if (item.isSimilar(`is`)) {
+                amount += `is`.amount
+            }
+        }
+        return amount
     }
 
+    fun toArray(collection: Collection<ItemStack?>?): Array<ItemStack> {
+        return collection!!.toTypedArray()!!
+    }
+
+    init {
+        if (!Reflections.USE_PRE_12_METHODS) {
+            val namespacedKeyClass = Reflections.getBukkitClass("NamespacedKey")
+            BY_IN_GAME_NAME_ENCHANT = Reflections.getMethod(Enchantment::class.java, "getByKey")
+            CREATE_NAMESPACED_KEY = Reflections.getMethod(net.dzikoysk.funnyguilds.util.commons.bukkit.namespacedKeyClass, "minecraft", String::class.java)
+        }
+    }
 }

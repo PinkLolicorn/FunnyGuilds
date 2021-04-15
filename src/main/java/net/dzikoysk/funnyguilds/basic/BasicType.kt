@@ -1,11 +1,5 @@
-package net.dzikoysk.funnyguilds.basic;
+package net.dzikoysk.funnyguilds.basic
 
-public enum BasicType {
-
-    GUILD,
-    OFFLINE_USER,
-    RANK,
-    REGION,
-    USER
-
+enum class BasicType {
+    GUILD, OFFLINE_USER, RANK, REGION, USER
 }

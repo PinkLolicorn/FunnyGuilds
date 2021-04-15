@@ -1,57 +1,45 @@
-package net.dzikoysk.funnyguilds.util;
+package net.dzikoysk.funnyguilds.util
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import org.bukkit.configuration.file.YamlConfiguration;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import org.bukkit.configuration.file.YamlConfiguration
+import java.io.*
 
-import java.io.File;
-import java.io.IOException;
-
-public final class YamlWrapper extends YamlConfiguration {
-
-    private final File file;
-
-    public YamlWrapper(File file) {
-        super();
-        
+class YamlWrapper(file: File?) : YamlConfiguration() {
+    private val file: File?
+    override fun save(file: File) {
         try {
             if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                file.createNewFile();
+                file.parentFile.mkdirs()
+                file.createNewFile()
             }
-
-            super.load(file);
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("Failed to load the file!", exception);
-        }
-
-        this.file = file;
-    }
-
-    @Override
-    public void save(File file) {
-        try {
-            if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                file.createNewFile();
-            }
-
-            super.save(file);
-        } catch (IOException ioException) {
-            FunnyGuilds.getPluginLogger().error("Failed to save the file!", ioException);
+            super.save(file)
+        } catch (ioException: IOException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Failed to save the file!", ioException)
         }
     }
 
-    public void save() {
+    fun save() {
         try {
-            if (!file.exists()) {
-                file.getParentFile().mkdirs();
-                file.createNewFile();
+            if (!file!!.exists()) {
+                file.parentFile.mkdirs()
+                file.createNewFile()
             }
-
-            super.save(this.file);
-        } catch (IOException ioException) {
-            FunnyGuilds.getPluginLogger().error("Failed to save the file!", ioException);
+            super.save(file)
+        } catch (ioException: IOException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Failed to save the file!", ioException)
         }
     }
 
+    init {
+        try {
+            if (!file!!.exists()) {
+                file.parentFile.mkdirs()
+                file.createNewFile()
+            }
+            super.load(file)
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("Failed to load the file!", exception)
+        }
+        this.file = file
+    }
 }

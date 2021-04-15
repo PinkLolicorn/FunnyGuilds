@@ -1,64 +1,43 @@
-package net.dzikoysk.funnyguilds.hook;
+package net.dzikoysk.funnyguilds.hook
 
-import codecrafter47.bungeetablistplus.api.bukkit.BungeeTabListPlusBukkitAPI;
-import codecrafter47.bungeetablistplus.api.bukkit.Variable;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.basic.rank.RankUtils;
-import net.dzikoysk.funnyguilds.basic.user.User;
-import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables;
-import net.dzikoysk.funnyguilds.element.tablist.variable.TablistVariable;
-import org.bukkit.entity.Player;
+import codecrafter47.bungeetablistplus.api.bukkit.BungeeTabListPlusBukkitAPI
+import codecrafter47.bungeetablistplus.api.bukkit.Variable
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.basic.rank.RankUtils
+import net.dzikoysk.funnyguilds.basic.user.User
+import net.dzikoysk.funnyguilds.element.tablist.variable.DefaultTablistVariables
+import org.bukkit.entity.Player
 
-import java.util.Map.Entry;
-
-public final class BungeeTabListPlusHook {
-
-    public static void initVariableHook() {       
-        FunnyGuilds plugin = FunnyGuilds.getInstance();
-
-        for (Entry<String,TablistVariable> variable : DefaultTablistVariables.getFunnyVariables().entrySet()) {
-            BungeeTabListPlusBukkitAPI.registerVariable(plugin, new Variable("funnyguilds_" + variable.getKey()) {
-                
-                @Override
-                public String getReplacement(Player player) {                  
-                    User user = User.get(player);
-                    if (user == null) {
-                        return "";
-                    }
-                    
-                    return variable.getValue().get(user);
+object BungeeTabListPlusHook {
+    fun initVariableHook() {
+        val plugin: FunnyGuilds = FunnyGuilds.Companion.getInstance()
+        for ((key, value) in DefaultTablistVariables.getFunnyVariables()) {
+            BungeeTabListPlusBukkitAPI.registerVariable(plugin, object : Variable("funnyguilds_$key") {
+                override fun getReplacement(player: Player): String {
+                    val user: User = User.Companion.get(player) ?: return ""
+                    return value[user]
                 }
-            });
+            })
         }
 
         // Guild TOP, positions 1-100
-        for (int i = 1; i <= 100; i++) {
-            final int index = i;
-            BungeeTabListPlusBukkitAPI.registerVariable(plugin, new Variable("funnyguilds_gtop-" + index) {
-
-                @Override
-                public String getReplacement(Player player) {
-                    User user = User.get(player);
-                    return RankUtils.parseRank(user, "{GTOP-" + index + "}");
+        for (i in 1..100) {
+            BungeeTabListPlusBukkitAPI.registerVariable(plugin, object : Variable("funnyguilds_gtop-$i") {
+                override fun getReplacement(player: Player): String {
+                    val user: User = User.Companion.get(player)
+                    return RankUtils.parseRank(user, "{GTOP-$i}")!!
                 }
-            });
+            })
         }
 
         // User TOP, positions 1-100
-        for (int i = 1; i <= 100; i++) {
-            final int index = i;
-            BungeeTabListPlusBukkitAPI.registerVariable(plugin, new Variable("funnyguilds_ptop-" + index) {
-
-                @Override
-                public String getReplacement(Player player) {
-                    return RankUtils.parseRank(null, "{PTOP-" + index + "}");
+        for (i in 1..100) {
+            BungeeTabListPlusBukkitAPI.registerVariable(plugin, object : Variable("funnyguilds_ptop-$i") {
+                override fun getReplacement(player: Player): String {
+                    return RankUtils.parseRank(null, "{PTOP-$i}")!!
                 }
-            });
+            })
         }
-
-        FunnyGuilds.getPluginLogger().info("BungeeTabListPlus hook has been enabled!");
+        FunnyGuilds.Companion.getPluginLogger().info("BungeeTabListPlus hook has been enabled!")
     }
-
-    private BungeeTabListPlusHook() {}
-    
 }

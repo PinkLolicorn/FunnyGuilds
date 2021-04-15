@@ -1,92 +1,78 @@
-package net.dzikoysk.funnyguilds.util.nms;
+package net.dzikoysk.funnyguilds.util.nms
 
-import io.netty.channel.*;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager;
-import net.dzikoysk.funnyguilds.concurrency.requests.WarUseRequest;
-import net.dzikoysk.funnyguilds.util.nms.Reflections.FieldAccessor;
-import org.bukkit.entity.Player;
+import io.netty.channel.*
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.concurrency.ConcurrencyManager
+import net.dzikoysk.funnyguilds.concurrency.requests.WarUseRequest
+import org.bukkit.entity.Player
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
-public final class PacketExtension {
-
-    private static FieldAccessor<Channel> clientChannel;
-    private static Field playerConnection;
-    private static Field networkManager;
-    private static Method handleMethod;
-
-    static {
-        try {
-            clientChannel = Reflections.getField(Reflections.getNMSClass("NetworkManager"), Channel.class, 0);
-            playerConnection = Reflections.getField(Reflections.getNMSClass("EntityPlayer"), "playerConnection");
-            networkManager = Reflections.getField(Reflections.getNMSClass("PlayerConnection"), "networkManager");
-            handleMethod = Reflections.getMethod(Reflections.getCraftBukkitClass("entity.CraftEntity"), "getHandle");
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("PacketExtension Error", exception);
+object PacketExtension {
+    private var clientChannel: Reflections.FieldAccessor<Channel?>? = null
+    private var playerConnection: Field? = null
+    private var networkManager: Field? = null
+    private var handleMethod: Method? = null
+    private fun getChannel(player: Player): Channel? {
+        return try {
+            val eP = handleMethod!!.invoke(player)
+            clientChannel!![networkManager!![playerConnection!![eP]]]
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("PacketExtension Error", exception)
+            null
         }
     }
 
-    private static Channel getChannel(Player player) {
+    fun registerPlayer(player: Player) {
         try {
-            Object eP = handleMethod.invoke(player);
-            return clientChannel.get(networkManager.get(playerConnection.get(eP)));
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("PacketExtension Error", exception);
-            return null;
-        }
-    }
-
-    public static void registerPlayer(Player player) {
-        try {
-            ConcurrencyManager concurrencyManager = FunnyGuilds.getInstance().getConcurrencyManager();
-            Channel channel = getChannel(player);
-
-            ChannelHandler handler = new ChannelDuplexHandler() {
-                @Override
-                public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            val concurrencyManager: ConcurrencyManager = FunnyGuilds.Companion.getInstance().getConcurrencyManager()
+            val channel = getChannel(player)
+            val handler: ChannelHandler = object : ChannelDuplexHandler() {
+                @Throws(Exception::class)
+                override fun write(ctx: ChannelHandlerContext, msg: Any, promise: ChannelPromise) {
                     if (msg == null) {
-                        return;
+                        return
                     }
-                    
-                    super.write(ctx, msg, promise);
+                    super.write(ctx, msg, promise)
                 }
 
-                @Override
-                public void channelRead(ChannelHandlerContext ctx, Object packet) throws Exception {
+                @Throws(Exception::class)
+                override fun channelRead(ctx: ChannelHandlerContext, packet: Any) {
                     try {
                         if (packet == null) {
-                            return;
+                            return
                         }
-
-                        concurrencyManager.postRequests(new WarUseRequest(player, packet));
-
-                        super.channelRead(ctx, packet);
-                    } catch (Exception e) {
-                        super.channelRead(ctx, packet);
+                        concurrencyManager.postRequests(WarUseRequest(player, packet))
+                        super.channelRead(ctx, packet)
+                    } catch (e: Exception) {
+                        super.channelRead(ctx, packet)
                     }
                 }
-            };
-
-            if (channel == null) {
-                return;
             }
-
-            ChannelPipeline pipeline = channel.pipeline();
-
+            if (channel == null) {
+                return
+            }
+            val pipeline = channel.pipeline()
             if (pipeline.names().contains("packet_handler")) {
                 if (pipeline.names().contains("FunnyGuilds")) {
-                    pipeline.replace("FunnyGuilds", "FunnyGuilds", handler);
+                    pipeline.replace("FunnyGuilds", "FunnyGuilds", handler)
                 } else {
-                    pipeline.addBefore("packet_handler", "FunnyGuilds", handler);
+                    pipeline.addBefore("packet_handler", "FunnyGuilds", handler)
                 }
             }
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("PacketExtension Error", exception);
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("PacketExtension Error", exception)
         }
     }
 
-    private PacketExtension() {}
-
+    init {
+        try {
+            clientChannel = Reflections.getField<Channel>(Reflections.getNMSClass("NetworkManager"), Channel::class.java, 0)!!
+            playerConnection = Reflections.getField(Reflections.getNMSClass("EntityPlayer"), "playerConnection")
+            networkManager = Reflections.getField(Reflections.getNMSClass("PlayerConnection"), "networkManager")
+            handleMethod = Reflections.getMethod(Reflections.getCraftBukkitClass("entity.CraftEntity"), "getHandle")
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("PacketExtension Error", exception)
+        }
+    }
 }

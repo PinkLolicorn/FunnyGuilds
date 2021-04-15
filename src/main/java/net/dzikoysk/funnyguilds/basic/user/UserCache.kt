@@ -1,171 +1,96 @@
-package net.dzikoysk.funnyguilds.basic.user;
+package net.dzikoysk.funnyguilds.basic.user
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import net.dzikoysk.funnyguilds.element.Dummy;
-import net.dzikoysk.funnyguilds.element.IndividualPrefix;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.Scoreboard;
-import org.jetbrains.annotations.Nullable;
+import com.google.common.cache.CacheBuilder
+import net.dzikoysk.funnyguilds.element.Dummy
+import net.dzikoysk.funnyguilds.element.IndividualPrefix
+import org.bukkit.scheduler.BukkitTask
+import org.bukkit.scoreboard.Scoreboard
+import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.function.Function
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+class UserCache(private val user: User) {
+    private val damage: MutableMap<User?, Double> = HashMap()
+    private val attackerCache = CacheBuilder
+        .newBuilder()
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        .build<UUID?, Long>()
+    private val victimCache = CacheBuilder
+        .newBuilder()
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        .build<UUID?, Long>()
 
-public class UserCache {
+    @get:Synchronized
+    @set:Synchronized
+    var scoreboard: Scoreboard? = null
+    var individualPrefix: IndividualPrefix? = null
+    var dummy: Dummy? = null
+        get() {
+            if (field == null) {
+                field = Dummy(user)
+            }
+            return field
+        }
+    var teleportation: BukkitTask? = null
+    var notificationTime: Long = 0
+    var enter = false
 
-    private final User user;
-
-    private final Map<User, Double> damage = new HashMap<>();
-
-    private Cache<UUID, Long> attackerCache = CacheBuilder
-            .newBuilder()
-            .expireAfterWrite(30, TimeUnit.MINUTES)
-            .build();
-
-    private Cache<UUID, Long> victimCache = CacheBuilder
-            .newBuilder()
-            .expireAfterWrite(30, TimeUnit.MINUTES)
-            .build();
-
-    private Scoreboard scoreboard;
-    private IndividualPrefix prefix;
-    private Dummy dummy;
-
-    private BukkitTask teleportation;
-    private long notificationTime;
-    private boolean enter;
     //private boolean bypass;
-    private boolean spy;
-
-    public UserCache(User user) {
-        this.user = user;
+    var isSpy = false
+    fun addDamage(user: User?, damage: Double) {
+        val currentDamage = this.damage[user]
+        this.damage[user] = (currentDamage ?: 0.0) + damage
     }
 
-    public void addDamage(User user, double damage) {
-        Double currentDamage = this.damage.get(user);
-        this.damage.put(user, (currentDamage == null ? 0.0D : currentDamage) + damage);
-    }
-
-    public double killedBy(User user) {
+    fun killedBy(user: User?): Double {
         if (user == null) {
-            return 0.0D;
+            return 0.0
         }
-        Double dmg = this.damage.remove(user);
-        return dmg == null ? 0.0D : dmg;
+        val dmg = damage.remove(user)
+        return dmg ?: 0.0
     }
 
-    public void clearDamage() {
-        this.damage.clear();
+    fun clearDamage() {
+        damage.clear()
     }
 
-    public void setSpy(boolean spy) {
-        this.spy = spy;
+    fun registerVictim(user: User?) {
+        victimCache.put(user.getUUID(), System.currentTimeMillis())
     }
 
-    public void setTeleportation(BukkitTask teleportation) {
-        this.teleportation = teleportation;
+    fun registerAttacker(user: User?) {
+        attackerCache.put(user.getUUID(), System.currentTimeMillis())
     }
 
-    public void setDummy(Dummy dummy) {
-        this.dummy = dummy;
-    }
-
-    public void setIndividualPrefix(IndividualPrefix prefix) {
-        this.prefix = prefix;
-    }
-
-    public void setEnter(boolean enter) {
-        this.enter = enter;
-    }
-
-    public synchronized void setScoreboard(Scoreboard sb) {
-        this.scoreboard = sb;
-    }
-
-    public void registerVictim(User user) {
-        this.victimCache.put(user.getUUID(), System.currentTimeMillis());
-    }
-
-    public void registerAttacker(User user) {
-        this.attackerCache.put(user.getUUID(), System.currentTimeMillis());
-    }
-
-    @Nullable
-    public User getLastAttacker() {
-        Optional<UUID> lastAttackerUniqueId = this.attackerCache.asMap().entrySet()
+    val lastAttacker: User?
+        get() {
+            val lastAttackerUniqueId = attackerCache.asMap().entries
                 .stream()
-                .sorted(Map.Entry.<UUID, Long>comparingByValue().reversed())
-                .map(Entry::getKey).findFirst();
-
-        return lastAttackerUniqueId.map(UserUtils::get).orElse(null);
-    }
-
-    @Nullable
-    public Long wasVictimOf(User attacker) {
-        return this.attackerCache.getIfPresent(attacker.getUUID());
-    }
-
-    @Nullable
-    public Long wasAttackerOf(User victim) {
-        return this.victimCache.getIfPresent(victim.getUUID());
-    }
-
-    public void setNotificationTime(long notification) {
-        this.notificationTime = notification;
-    }
-
-    public boolean isSpy() {
-        return spy;
-    }
-
-    public BukkitTask getTeleportation() {
-        return teleportation;
-    }
-
-    public Map<User, Double> getDamage() {
-        return new HashMap<>(this.damage);
-    }
-
-    public Double getTotalDamage() {
-        double dmg = 0.0D;
-        for (double d : this.damage.values()) {
-            dmg += d;
+                .sorted(java.util.Map.Entry.comparingByValue<UUID?, Long>().reversed())
+                .map(Function<Entry<UUID?, Long>, UUID?> { obj: Entry<UUID?, Long> -> obj.key }).findFirst()
+            return lastAttackerUniqueId.map { obj: UUID? -> UserUtils.get() }.orElse(null)
         }
 
-        return dmg;
+    fun wasVictimOf(attacker: User?): Long? {
+        return attackerCache.getIfPresent(attacker.getUUID())
     }
 
-    public boolean isAssisted() {
-        return !this.damage.isEmpty();
+    fun wasAttackerOf(victim: User?): Long? {
+        return victimCache.getIfPresent(victim.getUUID())
     }
 
-    @Nullable
-    public synchronized Scoreboard getScoreboard() {
-        return this.scoreboard;
+    fun getDamage(): Map<User?, Double> {
+        return HashMap(damage)
     }
 
-    @Nullable
-    public IndividualPrefix getIndividualPrefix() {
-        return this.prefix;
-    }
-
-    public Dummy getDummy() {
-        if (this.dummy == null) {
-            this.dummy = new Dummy(user);
+    val totalDamage: Double
+        get() {
+            var dmg = 0.0
+            for (d in damage.values) {
+                dmg += d
+            }
+            return dmg
         }
-
-        return this.dummy;
-    }
-
-    public long getNotificationTime() {
-        return this.notificationTime;
-    }
-
-    public boolean getEnter() {
-        return this.enter;
-    }
+    val isAssisted: Boolean
+        get() = !damage.isEmpty()
 }

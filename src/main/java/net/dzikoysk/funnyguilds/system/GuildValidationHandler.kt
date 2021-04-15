@@ -1,56 +1,45 @@
-package net.dzikoysk.funnyguilds.system;
+package net.dzikoysk.funnyguilds.system
 
-import net.dzikoysk.funnyguilds.basic.guild.Guild;
-import net.dzikoysk.funnyguilds.basic.guild.GuildUtils;
-import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause;
-import net.dzikoysk.funnyguilds.event.SimpleEventHandler;
-import net.dzikoysk.funnyguilds.event.guild.GuildDeleteEvent;
-import net.dzikoysk.funnyguilds.system.validity.ValidityUtils;
+import net.dzikoysk.funnyguilds.basic.guild.GuildUtils
+import net.dzikoysk.funnyguilds.event.FunnyEvent.EventCause
+import net.dzikoysk.funnyguilds.event.SimpleEventHandler
+import net.dzikoysk.funnyguilds.event.guild.GuildDeleteEvent
+import net.dzikoysk.funnyguilds.system.validity.ValidityUtils
 
-public class GuildValidationHandler implements Runnable {
-
-    private int banGuildsCounter;
-    private int validateGuildsCounter;
-
-    @Override
-    public void run() {
-        if (++ validateGuildsCounter >= 10) {
-            this.validateGuildLifetime();
+class GuildValidationHandler : Runnable {
+    private var banGuildsCounter = 0
+    private var validateGuildsCounter = 0
+    override fun run() {
+        if (++validateGuildsCounter >= 10) {
+            validateGuildLifetime()
         }
-
-        if (++ banGuildsCounter >= 7) {
-            this.validateGuildBans();
+        if (++banGuildsCounter >= 7) {
+            validateGuildBans()
         }
     }
 
-    private void validateGuildLifetime() {
-        for (Guild guild : GuildUtils.getGuilds()) {
-            if (guild.isValid()) {
-                continue;
+    private fun validateGuildLifetime() {
+        for (guild in GuildUtils.getGuilds()) {
+            if (guild!!.isValid) {
+                continue
             }
-
-            if (!SimpleEventHandler.handle(new GuildDeleteEvent(EventCause.SYSTEM, null, guild))) {
-                continue;
+            if (!SimpleEventHandler.handle(GuildDeleteEvent(EventCause.SYSTEM, null, guild))) {
+                continue
             }
-
-            ValidityUtils.broadcast(guild);
-            GuildUtils.deleteGuild(guild);
+            ValidityUtils.broadcast(guild)
+            GuildUtils.deleteGuild(guild)
         }
-
-        this.validateGuildsCounter = 0;
+        validateGuildsCounter = 0
     }
 
-    private void validateGuildBans() {
-        for (Guild guild : GuildUtils.getGuilds()) {
-            if (guild.getBan() > System.currentTimeMillis()) {
-                continue;
+    private fun validateGuildBans() {
+        for (guild in GuildUtils.getGuilds()) {
+            if (guild!!.ban > System.currentTimeMillis()) {
+                continue
             }
-
-            guild.setBan(0);
-            guild.markChanged();
+            guild.ban = 0
+            guild.markChanged()
         }
-
-        this.banGuildsCounter = 0;
+        banGuildsCounter = 0
     }
-
 }

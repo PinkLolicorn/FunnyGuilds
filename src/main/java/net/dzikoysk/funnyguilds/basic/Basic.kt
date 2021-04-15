@@ -1,13 +1,8 @@
-package net.dzikoysk.funnyguilds.basic;
+package net.dzikoysk.funnyguilds.basic
 
-public interface Basic {
-
-    void markChanged();
-
-    boolean wasChanged();
-
-    BasicType getType();
-
-    String getName();
-
+interface Basic {
+    fun markChanged()
+    fun wasChanged(): Boolean
+    val type: BasicType?
+    val name: String?
 }

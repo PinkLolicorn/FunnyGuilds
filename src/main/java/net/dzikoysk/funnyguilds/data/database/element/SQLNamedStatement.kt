@@ -1,81 +1,69 @@
-package net.dzikoysk.funnyguilds.data.database.element;
+package net.dzikoysk.funnyguilds.data.database.element
 
-import net.dzikoysk.funnyguilds.FunnyGuilds;
-import net.dzikoysk.funnyguilds.data.database.Database;
-import org.diorite.utils.collections.maps.CaseInsensitiveMap;
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import net.dzikoysk.funnyguilds.data.database.Database
+import org.diorite.utils.collections.maps.CaseInsensitiveMap
+import java.sql.PreparedStatement
+import java.sql.ResultSet
+import java.sql.SQLException
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-
-public class SQLNamedStatement {
-
-    private final Map<String, Object> placeholders = new HashMap<>();
-    private final CaseInsensitiveMap<Integer> keyMapIndex;
-    private final String sql;
-
-    public SQLNamedStatement(String sql, Map<String, Integer> keyMap) {
-        this.sql = sql;
-        this.keyMapIndex = new CaseInsensitiveMap<>(keyMap);
-    }
-
-    public void set(String key, Object value) {
+class SQLNamedStatement(private val sql: String, keyMap: Map<String?, Int?>?) {
+    private val placeholders: MutableMap<String, Any?> = HashMap()
+    private val keyMapIndex: CaseInsensitiveMap<Int?>
+    operator fun set(key: String, value: Any?) {
         if (!keyMapIndex.containsKey(key)) {
-            return;
+            return
         }
-
-        placeholders.put(key, value);
+        placeholders[key] = value
     }
 
-    public void executeUpdate() {
-        try (Connection con = Database.getConnection()) {
-            PreparedStatement statement = setPlaceholders(con.prepareStatement(sql));
-
-            statement.executeUpdate();
-        }
-        catch (SQLException sqlException) {
-            FunnyGuilds.getPluginLogger().error("Could not execute update", sqlException);
-        }
-    }
-
-    public void executeUpdate(boolean ignoreFails) {
-        try (Connection con = Database.getConnection()) {
-            PreparedStatement statement = setPlaceholders(con.prepareStatement(sql));
-
-            statement.executeUpdate();
-        }
-        catch (SQLException sqlException) {
-            if (ignoreFails) {
-                FunnyGuilds.getPluginLogger().debug("Could not execute update (ignoreFails)");
-                return;
+    fun executeUpdate() {
+        try {
+            Database.Companion.getConnection().use { con ->
+                val statement = setPlaceholders(con.prepareStatement(sql))
+                statement.executeUpdate()
             }
-
-            FunnyGuilds.getPluginLogger().error("Could not execute update", sqlException);
+        } catch (sqlException: SQLException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not execute update", sqlException)
         }
     }
 
-    public ResultSet executeQuery() {
-        try (Connection con = Database.getConnection()) {
-            PreparedStatement statement = setPlaceholders(con.prepareStatement(sql));
-
-            return statement.executeQuery();
+    fun executeUpdate(ignoreFails: Boolean) {
+        try {
+            Database.Companion.getConnection().use { con ->
+                val statement = setPlaceholders(con.prepareStatement(sql))
+                statement.executeUpdate()
+            }
+        } catch (sqlException: SQLException) {
+            if (ignoreFails) {
+                FunnyGuilds.Companion.getPluginLogger().debug("Could not execute update (ignoreFails)")
+                return
+            }
+            FunnyGuilds.Companion.getPluginLogger().error("Could not execute update", sqlException)
         }
-        catch (SQLException sqlException) {
-            FunnyGuilds.getPluginLogger().error("Could not execute query", sqlException);
-        }
-
-        return null;
     }
 
-    private PreparedStatement setPlaceholders(PreparedStatement preparedStatement) throws SQLException {
-        for (Map.Entry<String, Object> placeholder : placeholders.entrySet()) {
-            preparedStatement.setObject(keyMapIndex.get(placeholder.getKey()), placeholder.getValue());
+    fun executeQuery(): ResultSet? {
+        try {
+            Database.Companion.getConnection().use { con ->
+                val statement = setPlaceholders(con.prepareStatement(sql))
+                return statement.executeQuery()
+            }
+        } catch (sqlException: SQLException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not execute query", sqlException)
         }
-
-        return preparedStatement;
+        return null
     }
 
+    @Throws(SQLException::class)
+    private fun setPlaceholders(preparedStatement: PreparedStatement): PreparedStatement {
+        for ((key, value) in placeholders) {
+            preparedStatement.setObject(keyMapIndex[key]!!, value)
+        }
+        return preparedStatement
+    }
+
+    init {
+        keyMapIndex = CaseInsensitiveMap(keyMap)
+    }
 }

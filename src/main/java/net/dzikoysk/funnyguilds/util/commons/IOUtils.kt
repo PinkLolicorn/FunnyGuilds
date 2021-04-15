@@ -1,126 +1,101 @@
-package net.dzikoysk.funnyguilds.util.commons;
+package net.dzikoysk.funnyguilds.util.commons
 
-import com.google.common.base.Throwables;
-import net.dzikoysk.funnyguilds.FunnyGuilds;
+import com.google.common.base.Throwables
+import net.dzikoysk.funnyguilds.FunnyGuilds
+import java.io.*
+import java.net.URL
 
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-
-public final class IOUtils {
-
-    private IOUtils() {}
-
-    public static File initialize(File file, boolean b) {
+object IOUtils {
+    fun initialize(file: File, b: Boolean): File {
         if (!file.exists()) {
             try {
-                file.getParentFile().mkdirs();
+                file.parentFile.mkdirs()
                 if (b) {
-                    file.createNewFile();
+                    file.createNewFile()
                 } else {
-                    file.mkdir();
+                    file.mkdir()
                 }
-            }
-            catch (IOException ex) {
-                FunnyGuilds.getPluginLogger().error("Could not initialize file: " + file.getAbsolutePath(), ex);
+            } catch (ex: IOException) {
+                FunnyGuilds.Companion.getPluginLogger().error("Could not initialize file: " + file.absolutePath, ex)
             }
         }
-        
-        return file;
+        return file
     }
 
-    public static String getContent(String s) {
-        String body = null;
-        InputStream in = null;
-
+    fun getContent(s: String): String? {
+        var body: String? = null
+        var `in`: InputStream? = null
         try {
-            URLConnection con = new URL(s).openConnection();
-            
-            con.setRequestProperty("User-Agent", "Mozilla/5.0");
-            in = con.getInputStream();
-            
-            String encoding = con.getContentEncoding();
-            encoding = encoding == null ? "UTF-8" : encoding;
-            
-            body = IOUtils.toString(in, encoding);
-            in.close();
-        }
-        catch (Exception ex) {
-            FunnyGuilds.getPluginLogger().update("Connection to the update server (" + s + ") failed!");
-            FunnyGuilds.getPluginLogger().update("Reason: " + Throwables.getStackTraceAsString(ex));
+            val con = URL(s).openConnection()
+            con.setRequestProperty("User-Agent", "Mozilla/5.0")
+            `in` = con.getInputStream()
+            var encoding = con.contentEncoding
+            encoding = encoding ?: "UTF-8"
+            body = toString(`in`, encoding)
+            `in`.close()
+        } catch (ex: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().update("Connection to the update server ($s) failed!")
+            FunnyGuilds.Companion.getPluginLogger().update("Reason: " + Throwables.getStackTraceAsString(ex))
         } finally {
-            close(in);
+            close(`in`)
         }
-
-        return body;
+        return body
     }
 
-    public static File getFile(String s, boolean folder) {
-        File file = new File(s);
-        
+    fun getFile(s: String?, folder: Boolean): File {
+        val file = File(s)
         try {
             if (!file.exists()) {
                 if (folder) {
-                    file.mkdirs();
+                    file.mkdirs()
                 } else {
-                    file.getParentFile().mkdirs();
-                    file.createNewFile();
+                    file.parentFile.mkdirs()
+                    file.createNewFile()
                 }
             }
-        } catch (Exception exception) {
-            FunnyGuilds.getPluginLogger().error("The file could not be created!", exception);
+        } catch (exception: Exception) {
+            FunnyGuilds.Companion.getPluginLogger().error("The file could not be created!", exception)
         }
-        
-        return file;
+        return file
     }
 
-    public static void delete(File f) {
+    fun delete(f: File) {
         if (!f.exists()) {
-            return;
+            return
         }
-        
-        if (f.isDirectory()) {
-            for (File c : f.listFiles()) {
-                delete(c);
+        if (f.isDirectory) {
+            for (c in f.listFiles()) {
+                delete(c)
             }
         }
-        
         if (!f.delete()) {
             try {
-                throw new FileNotFoundException("Failed to delete file: " + f);
-            } catch (FileNotFoundException exception) {
-                FunnyGuilds.getPluginLogger().error("The file could not be deleted!", exception);
+                throw FileNotFoundException("Failed to delete file: $f")
+            } catch (exception: FileNotFoundException) {
+                FunnyGuilds.Companion.getPluginLogger().error("The file could not be deleted!", exception)
             }
         }
     }
 
-    public static String toString(InputStream in, String encoding) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buf = new byte[8192];
-        int len;
-        
-        while ((len = in.read(buf)) != -1) {
-            baos.write(buf, 0, len);
+    @Throws(IOException::class)
+    fun toString(`in`: InputStream?, encoding: String?): String {
+        val baos = ByteArrayOutputStream()
+        val buf = ByteArray(8192)
+        var len: Int
+        while (`in`!!.read(buf).also { len = it } != -1) {
+            baos.write(buf, 0, len)
         }
-        
-        return baos.toString(encoding);
+        return baos.toString(encoding)
     }
 
-    public static void close(Closeable closeable) {
+    fun close(closeable: Closeable?) {
         if (closeable == null) {
-            return;
+            return
         }
-
         try {
-            closeable.close();
-        } catch (IOException exception) {
-            FunnyGuilds.getPluginLogger().error("Could not close IO", exception);
+            closeable.close()
+        } catch (exception: IOException) {
+            FunnyGuilds.Companion.getPluginLogger().error("Could not close IO", exception)
         }
     }
-
 }

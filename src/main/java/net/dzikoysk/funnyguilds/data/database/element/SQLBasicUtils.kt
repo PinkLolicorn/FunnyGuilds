@@ -1,123 +1,100 @@
-package net.dzikoysk.funnyguilds.data.database.element;
+package net.dzikoysk.funnyguilds.data.database.element
 
-import org.panda_lang.utilities.commons.text.Joiner;
+import org.panda_lang.utilities.commons.text.Joiner
 
-import java.util.HashMap;
-
-public class SQLBasicUtils {
-
-    private SQLBasicUtils() {}
-
-    public static SQLNamedStatement getInsert(SQLTable table) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("INSERT INTO ");
-        sb.append(table.getNameGraveAccent());
-        sb.append(" (");
-        sb.append(Joiner.on(", ").join(table.getSqlElements(), SQLElement::getKeyGraveAccent));
-        sb.append(") VALUES (");
-        sb.append(Joiner.on(", ").join(table.getSqlElements(), sqlElement -> "?"));
-        sb.append(") ON DUPLICATE KEY UPDATE ");
-        sb.append(Joiner.on(", ").join(table.getSqlElements(), SQLElement::getKeyValuesAssignment));
-
-        return new SQLNamedStatement(sb.toString(), table.getMapElementsKey());
+object SQLBasicUtils {
+    fun getInsert(table: SQLTable?): SQLNamedStatement {
+        val sb = StringBuilder()
+        sb.append("INSERT INTO ")
+        sb.append(table.getNameGraveAccent())
+        sb.append(" (")
+        sb.append(Joiner.on(", ").join(table.getSqlElements()) { obj: SQLElement? -> obj!!.keyGraveAccent })
+        sb.append(") VALUES (")
+        sb.append(Joiner.on(", ").join(table.getSqlElements()) { sqlElement: SQLElement? -> "?" })
+        sb.append(") ON DUPLICATE KEY UPDATE ")
+        sb.append(Joiner.on(", ").join(table.getSqlElements()) { obj: SQLElement? -> obj!!.keyValuesAssignment })
+        return SQLNamedStatement(sb.toString(), table.getMapElementsKey())
     }
 
-    public static SQLNamedStatement getSelect(SQLTable table, String... sqlElements) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("SELECT ");
-        sb.append(Joiner.on(", ").join(sqlElements, sqlElement -> table.getSQLElement(sqlElement).getKeyGraveAccent()));
-        sb.append(" FROM ");
-        sb.append(table.getNameGraveAccent());
-
-        return new SQLNamedStatement(sb.toString(), new HashMap<>());
+    fun getSelect(table: SQLTable?, vararg sqlElements: String): SQLNamedStatement {
+        val sb = StringBuilder()
+        sb.append("SELECT ")
+        sb.append(Joiner.on(", ").join(sqlElements) { sqlElement: String? ->
+            table!!.getSQLElement(sqlElement)!!
+                .keyGraveAccent
+        })
+        sb.append(" FROM ")
+        sb.append(table.getNameGraveAccent())
+        return SQLNamedStatement(sb.toString(), HashMap())
     }
 
-    public static SQLNamedStatement getSelectAll(SQLTable table) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("SELECT * FROM ");
-        sb.append(table.getNameGraveAccent());
-
-        return new SQLNamedStatement(sb.toString(), new HashMap<>());
+    fun getSelectAll(table: SQLTable?): SQLNamedStatement {
+        val sb = StringBuilder()
+        sb.append("SELECT * FROM ")
+        sb.append(table.getNameGraveAccent())
+        return SQLNamedStatement(sb.toString(), HashMap())
     }
 
-    public static SQLNamedStatement getUpdate(SQLTable table, SQLElement element) {
-        HashMap<String, Integer> keyMap = new HashMap<>();
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("UPDATE ");
-        sb.append(table.getNameGraveAccent());
-        sb.append(" SET ");
-        sb.append(element.getKeyGraveAccent());
-        sb.append(" = ?");
-        sb.append(" WHERE ");
-        sb.append(table.getPrimaryKey().getKeyGraveAccent());
-        sb.append(" = ?");
-
-        keyMap.put(element.getKey(), 1);
-        keyMap.put(table.getPrimaryKey().getKey(), 2);
-
-        return new SQLNamedStatement(sb.toString(), keyMap);
+    fun getUpdate(table: SQLTable?, element: SQLElement?): SQLNamedStatement {
+        val keyMap = HashMap<String?, Int?>()
+        val sb = StringBuilder()
+        sb.append("UPDATE ")
+        sb.append(table.getNameGraveAccent())
+        sb.append(" SET ")
+        sb.append(element!!.keyGraveAccent)
+        sb.append(" = ?")
+        sb.append(" WHERE ")
+        sb.append(table.getPrimaryKey().keyGraveAccent)
+        sb.append(" = ?")
+        keyMap[element.key] = 1
+        keyMap[table.getPrimaryKey().key] = 2
+        return SQLNamedStatement(sb.toString(), keyMap)
     }
 
-    public static SQLNamedStatement getCreate(SQLTable table) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("CREATE TABLE IF NOT EXISTS ");
-        sb.append(table.getNameGraveAccent());
-        sb.append(" (");
-        sb.append(Joiner.on(", ").join(table.getSqlElements(), sqlElement -> {
-            StringBuilder element = new StringBuilder();
-
-            element.append(sqlElement.getKeyGraveAccent());
-            element.append(" ");
-            element.append(sqlElement.getType());
-
-            if (sqlElement.isNotNull()) {
-                element.append(" NOT NULL");
+    fun getCreate(table: SQLTable?): SQLNamedStatement {
+        val sb = StringBuilder()
+        sb.append("CREATE TABLE IF NOT EXISTS ")
+        sb.append(table.getNameGraveAccent())
+        sb.append(" (")
+        sb.append(Joiner.on(", ").join(table.getSqlElements()) { sqlElement: SQLElement? ->
+            val element = StringBuilder()
+            element.append(sqlElement!!.keyGraveAccent)
+            element.append(" ")
+            element.append(sqlElement.type)
+            if (sqlElement.isNotNull) {
+                element.append(" NOT NULL")
             }
-
-            return element.toString();
-        }));
-
-        sb.append(", PRIMARY KEY (");
-        sb.append(table.getPrimaryKey().getKey());
-        sb.append("));");
-
-        return new SQLNamedStatement(sb.toString(), new HashMap<>());
+            element.toString()
+        })
+        sb.append(", PRIMARY KEY (")
+        sb.append(table.getPrimaryKey().key)
+        sb.append("));")
+        return SQLNamedStatement(sb.toString(), HashMap())
     }
 
-    public static SQLNamedStatement getDelete(SQLTable table) {
-        HashMap<String, Integer> keyMap = new HashMap<>();
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("DELETE FROM ");
-        sb.append(table.getNameGraveAccent());
-        sb.append(" WHERE ");
-        sb.append(table.getPrimaryKey().getKeyGraveAccent());
-        sb.append(" = ?");
-
-        keyMap.put(table.getPrimaryKey().getKey(), 1);
-
-        return new SQLNamedStatement(sb.toString(), keyMap);
+    fun getDelete(table: SQLTable?): SQLNamedStatement {
+        val keyMap = HashMap<String?, Int?>()
+        val sb = StringBuilder()
+        sb.append("DELETE FROM ")
+        sb.append(table.getNameGraveAccent())
+        sb.append(" WHERE ")
+        sb.append(table.getPrimaryKey().keyGraveAccent)
+        sb.append(" = ?")
+        keyMap[table.getPrimaryKey().key] = 1
+        return SQLNamedStatement(sb.toString(), keyMap)
     }
 
-    public static SQLNamedStatement getAlter(SQLTable table, SQLElement column) {
-        StringBuilder sb = new StringBuilder();
-        int index = table.getIndexElement(column.getKey());
-
-        sb.append("ALTER TABLE ");
-        sb.append(table.getNameGraveAccent());
-        sb.append(" ADD COLUMN ");
-        sb.append(column.getKeyGraveAccent());
-        sb.append(" ");
-        sb.append(column.getType());
-        sb.append(index == 0 ? " FIRST" : " AFTER " + table.getSqlElements().get(index - 1).getKeyGraveAccent());
-        sb.append(";");
-
-        return new SQLNamedStatement(sb.toString(),  new HashMap<>());
+    fun getAlter(table: SQLTable?, column: SQLElement?): SQLNamedStatement {
+        val sb = StringBuilder()
+        val index = table!!.getIndexElement(column!!.key)
+        sb.append("ALTER TABLE ")
+        sb.append(table.nameGraveAccent)
+        sb.append(" ADD COLUMN ")
+        sb.append(column.keyGraveAccent)
+        sb.append(" ")
+        sb.append(column.type)
+        sb.append(if (index == 0) " FIRST" else " AFTER " + table.sqlElements[index - 1].keyGraveAccent)
+        sb.append(";")
+        return SQLNamedStatement(sb.toString(), HashMap())
     }
-
 }
